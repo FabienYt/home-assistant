@@ -1,0 +1,18 @@
+---
+name: Unavailable - Lights
+unit_of_measurement: light(s)
+icon: "{% if is_state('sensor.unavailable_lights', '0') %}mdi:check-circle{% else %}mdi:alert-circle{% endif %}"
+state: >
+  {{ states.light
+    | selectattr('state', 'in', ['unavailable','unknown','none'])
+    | rejectattr('domain','eq','group')
+    | map(attribute='name')
+    | list
+    | count }}
+attributes:
+  lights: >
+    {{ states.light
+      | selectattr('state', 'in', ['unavailable','unknown','none'])
+      | rejectattr('domain','eq','group')
+      | map(attribute='name')
+      | list }}

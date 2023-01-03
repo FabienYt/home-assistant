@@ -1,0 +1,9 @@
+---
+name: Cover - Pantry - Mode
+options:
+  - Automatique
+  - Manuel
+  - Forcer ouverture
+  - Forcer fermeture
+  - Petits trous
+icon: mdi:window-shutter-open

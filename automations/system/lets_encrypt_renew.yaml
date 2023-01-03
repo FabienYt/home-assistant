@@ -1,0 +1,12 @@
+---
+description: Let's encrypt - Renew
+alias: lets_encrypt_renew
+id: 95462c90-b42c-4145-b12c-aa4a9cf02913
+mode: single
+trigger:
+  - platform: time
+    at: "01:00"
+action:
+  - service: hassio.addon_start
+    data:
+      addon: core_letsencrypt

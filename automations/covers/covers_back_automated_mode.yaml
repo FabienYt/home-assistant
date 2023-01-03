@@ -1,0 +1,54 @@
+---
+description: Covers - Back to automated mode
+alias: covers_back_auto_mode
+id: 7f2e0bf7-4649-4f05-833e-dfae5323447c
+mode: restart
+trigger:
+  - platform: state
+    entity_id:
+      - input_select.home_mode
+      - input_select.covers_mode
+  - platform: state
+    entity_id: input_select.period_of_day
+    to: "Nuit - chambres"
+    id: period_of_day_to_nuit_chambres
+  - platform: state
+    entity_id: input_select.period_of_day
+    from: "Nuit - chambres"
+    id: period_of_day_from_nuit_chambres
+  - platform: state
+    entity_id: input_select.period_of_day
+    to: "Jour"
+    not_from: "Nuit - chambres"
+  - platform: state
+    entity_id: input_select.period_of_day
+    to: "Nuit"
+action:
+  - if:
+      - condition: or
+        conditions:
+          - condition: trigger
+            id: period_of_day_to_nuit_chambres
+          - condition: trigger
+            id: period_of_day_from_nuit_chambres
+    then:
+      - service: input_select.select_option
+        target:
+          entity_id:
+            - input_select.cover_parents_bedroom_mode
+            - input_select.cover_pea_bedroom_mode
+        data:
+          option: Automatique
+    else:
+      - service: input_select.select_option
+        target:
+          entity_id:
+            - input_select.cover_dining_room_mode
+            - input_select.cover_kitchen_mode
+            - input_select.cover_living_room_mode
+            - input_select.cover_office_mode
+            - input_select.cover_pantry_mode
+            - input_select.cover_parents_bedroom_mode
+            - input_select.cover_pea_bedroom_mode
+        data:
+          option: Automatique

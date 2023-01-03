@@ -1,0 +1,7 @@
+---
+name: Window - Living room
+state: "{{ is_state('binary_sensor.living_room_window_left_contact_sensor_contact', 'on') or is_state('binary_sensor.living_room_window_right_contact_sensor_contact', 'on') }}"
+device_class: window
+attributes:
+  left_opened: "{{ is_state('binary_sensor.living_room_window_left_contact_sensor_contact', 'on') }}"
+  right_opened: "{{ is_state('binary_sensor.living_room_window_right_contact_sensor_contact', 'on') }}"

@@ -1,0 +1,6 @@
+---
+name: Threshold - Hall tablet - Battery min
+min: "1"
+max: "100"
+step: "1"
+unit_of_measurement: "%"

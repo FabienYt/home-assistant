@@ -1,0 +1,14 @@
+---
+# https://www.home-assistant.io/integrations/notify/
+#
+notify: !include_dir_list ../entities/notifiers
+
+# https://www.home-assistant.io/components/notify.telegram/
+#
+telegram_bot:
+  - platform: polling
+    api_key: !secret telegram_api_key
+    parse_mode: markdown
+    allowed_chat_ids:
+      - !secret telegram_fabien
+      - !secret telegram_maison

@@ -1,0 +1,5 @@
+---
+cover.shelly_2_5_rc_*:
+  friendly_name: Volet roulant
+input_select.cover_*_mode:
+  friendly_name: Mode du volet roulant

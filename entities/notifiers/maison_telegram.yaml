@@ -1,0 +1,4 @@
+---
+name: maison_telegram
+platform: telegram
+chat_id: !secret telegram_maison

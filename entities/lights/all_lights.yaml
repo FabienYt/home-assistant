@@ -1,0 +1,12 @@
+---
+# https://www.home-assistant.io/integrations/light.group/
+#
+platform: group
+name: "All lights"
+unique_id: 61806d7b-baeb-46a3-a9b8-5393d2db2317
+entities:
+  - light.hall_bulb_ceiling_huelight
+  - light.hall_bulb_shoe_storage_huelight
+  - light.ikea_of_sweden_tradfri_driver_10w_light
+  - light.living_room_tv_unit_hue_iris_huelight
+  - light.living_room_tv_unit_hue_striplight_huelight

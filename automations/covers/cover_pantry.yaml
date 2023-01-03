@@ -1,0 +1,104 @@
+---
+description: Cover - Pantry - Positioning
+alias: cover_pantry_positioning
+id: 67fefbbd-2375-45d2-bc7c-1938e1b9090f
+mode: restart
+trigger:
+  - platform: time_pattern
+    minutes: "/10"
+  - platform: event
+    event_type:
+      - timer.cancelled
+      - timer.finished
+    event_data:
+      entity_id: timer.cover_pantry
+condition:
+  - condition: state
+    entity_id: timer.cover_pantry
+    state: "idle"
+  - condition: template
+    value_template: "{{ (as_timestamp(now()) - as_timestamp(states.cover.shelly_2_5_rc_pantry.last_changed) | int(0)) > (states('input_number.cover_pantry_detection') | int) }}"
+action:
+  - condition: template
+    value_template: "{{ not is_state('input_select.covers_mode', 'Manuel') }}"
+  - condition: template
+    value_template: "{{ not is_state('input_select.cover_pantry_mode', 'Manuel') }}"
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: binary_sensor.presence_at_home
+            state: "off"
+          - condition: state
+            entity_id: binary_sensor.window_pantry
+            state: "on"
+        sequence:
+          - service: input_number.set_value
+            target:
+              entity_id: input_number.cover_pantry_desired_position
+            data:
+              value: 0
+      - conditions:
+          - condition: or
+            conditions:
+              - condition: state
+                entity_id: input_select.covers_mode
+                state: "Forcer ouverture"
+              - condition: state
+                entity_id: input_select.cover_pantry_mode
+                state: "Forcer ouverture"
+        sequence:
+          - service: input_number.set_value
+            target:
+              entity_id: input_number.cover_pantry_desired_position
+            data:
+              value: 100
+      - conditions:
+          - condition: or
+            conditions:
+              - condition: state
+                entity_id: input_select.covers_mode
+                state: "Forcer fermeture"
+              - condition: state
+                entity_id: input_select.cover_pantry_mode
+                state: "Forcer fermeture"
+              - condition: state
+                entity_id: input_select.period_of_day
+                state: "Nuit"
+        sequence:
+          - service: input_number.set_value
+            target:
+              entity_id: input_number.cover_pantry_desired_position
+            data:
+              value: 0
+      - conditions:
+          - condition: or
+            conditions:
+              - condition: state
+                entity_id: input_select.covers_mode
+                state: "Petits trous"
+              - condition: state
+                entity_id: input_select.cover_pantry_mode
+                state: "Petits trous"
+        sequence:
+          - service: input_number.set_value
+            target:
+              entity_id: input_number.cover_pantry_desired_position
+            data:
+              value: "{{ states('input_number.cover_pantry_accurate_position') }}"
+    default:
+      - if:
+          - condition: state
+            entity_id: input_boolean.is_night
+            state: "on"
+        then:
+          - service: input_number.set_value
+            target:
+              entity_id: input_number.cover_pantry_desired_position
+            data:
+              value: 0
+        else:
+          - service: input_number.set_value
+            target:
+              entity_id: input_number.cover_pantry_desired_position
+            data:
+              value: 100

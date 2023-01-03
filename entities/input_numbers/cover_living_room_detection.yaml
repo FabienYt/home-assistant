@@ -1,0 +1,6 @@
+---
+name: Cover - Living room - Time period (s) before suspension
+min: "5"
+max: "600"
+step: "5"
+unit_of_measurement: "s"

@@ -1,0 +1,12 @@
+---
+# https://www.home-assistant.io/integrations/http/
+#
+http:
+  server_port: 443
+  ssl_certificate: /ssl/fullchain.pem
+  ssl_key: /ssl/privkey.pem
+  # ip_ban_enabled: true
+  # login_attempts_threshold: 5
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 172.30.33.0/24

@@ -1,0 +1,4 @@
+---
+name: Need dimmed lights?
+state: >
+  {{ state_attr('sun.sun', 'elevation') < -10 }}

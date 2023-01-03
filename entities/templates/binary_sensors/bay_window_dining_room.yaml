@@ -1,0 +1,7 @@
+---
+name: Bay window - Dining room
+state: "{{ is_state('binary_sensor.dining_room_bay_window_left_contact_sensor_contact', 'on') or is_state('binary_sensor.dining_room_bay_window_right_contact_sensor_contact', 'on') }}"
+device_class: door
+attributes:
+  left_opened: "{{ is_state('binary_sensor.dining_room_bay_window_left_contact_sensor_contact', 'on') }}"
+  right_opened: "{{ is_state('binary_sensor.dining_room_bay_window_right_contact_sensor_contact', 'on') }}"

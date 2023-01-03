@@ -1,0 +1,4 @@
+---
+name: Cover - Kitchen - Check suspension
+state: "{{ not is_state('input_select.cover_kitchen_mode', 'Manuel') and not is_state('input_select.covers_mode', 'Manuel') }}"
+device_class: running

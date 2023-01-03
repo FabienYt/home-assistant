@@ -1,0 +1,22 @@
+---
+description: Cat feeder
+alias: cat_feeder
+id: e4c68398-327c-4cbe-8e06-7605310c68d0
+mode: single
+trigger:
+  - platform: time
+    at:
+      - "00:00"
+      - "08:00"
+      - "12:00"
+      - "16:30"
+      - "20:00"
+action:
+  - service: button.press
+    target:
+      entity_id: button.living_room_aqara_pet_feeder_feed
+  - delay:
+      seconds: 5
+  - service: button.press
+    target:
+      entity_id: button.living_room_aqara_pet_feeder_feed

@@ -1,0 +1,17 @@
+---
+description: Home mode - Status
+alias: home_mode_status
+id: f67827f1-3372-4c29-8b7b-260cd343afbd
+mode: restart
+trigger:
+  - platform: state
+    entity_id: binary_sensor.presence_at_home
+action:
+  - service: light.turn_off
+    target:
+      entity_id: light.all_lights
+  - service: input_select.select_option
+    target:
+      entity_id: input_select.covers_mode
+    data:
+      option: Automatique

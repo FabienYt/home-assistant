@@ -1,0 +1,4 @@
+---
+name: Presence at home
+state: "{{ is_state('input_boolean.charlene_at_home', 'on') or is_state('input_boolean.fabien_at_home', 'on') }}"
+device_class: presence

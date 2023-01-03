@@ -1,0 +1,18 @@
+---
+description: Is tablet plugged?
+alias: is_tablet_plugged
+id: 4af89226-4741-4e91-ba58-82de660ad115
+mode: single
+trigger:
+  - platform: state
+    entity_id: switch.entree_amazon_fire
+    to: "on"
+    for:
+      minutes: 1
+condition:
+  - condition: template
+    value_template: "{{ is_state('binary_sensor.fire_tablet_plugged_in', 'off') }}"
+action:
+  - service: notify.maison_telegram
+    data:
+      message: ⚠️ La tablette à l'entrée ne semble pas branchée. Il faut vérifier son alimentation !

@@ -1,0 +1,4 @@
+---
+name: fabien_telegram
+platform: telegram
+chat_id: !secret telegram_fabien

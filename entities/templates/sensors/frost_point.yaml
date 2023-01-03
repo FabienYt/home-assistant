@@ -1,0 +1,32 @@
+---
+# https://pon.fr/dzvents-alerte-givre-et-calcul-humidite-absolue/
+name: "Frost Point"
+unit_of_measurement: "°C"
+device_class: temperature
+state_class: measurement
+state: >-
+  {% set t = (states('sensor.garden_temperature_humidity_sensor_temperature') | float(1.0)) + 273.15 %}
+  {% set td = (states('sensor.dew_point') | float(1.0)) + 273.15 %}
+
+  {{ ((td + (2671.02 / ((2954.61 / t) + (2.193665 * log(t, e, 1.0)) - 13.3448)) - t) - 273.15) | round(2) }}
+attributes:
+  risk: >-
+    {% set f = states('sensor.frost_point') | float(1.0) %}
+    {% set a = states('sensor.absolute_humidity') | float(1.0) %}
+    {% set t = states('sensor.garden_temperature_humidity_sensor_temperature') | float(1.0) %}
+
+    {% if t <= 1 and f <= 0 %}
+      {% if a <= 2.8 %}
+        1
+      {% else %}
+        3
+      {% endif %}
+    {% elif t <= 4 and f <= 0.5 and a > 2.8 %}
+      2
+    {% else %}
+      0
+    {% endif %}
+availability: >
+  {{ is_number(states('sensor.garden_temperature_humidity_sensor_temperature')) and
+     is_number(states('sensor.absolute_humidity')) and
+     is_number(states('sensor.dew_point')) }}

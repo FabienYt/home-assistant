@@ -1,0 +1,6 @@
+---
+platform: ping
+name: Ping - DNS - FDN
+host: 80.67.169.12
+count: 2
+scan_interval: 60

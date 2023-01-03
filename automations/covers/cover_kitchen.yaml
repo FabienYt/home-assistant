@@ -1,0 +1,104 @@
+---
+description: Cover - Kitchen - Positioning
+alias: cover_kitchen_positioning
+id: c598cfbd-e8ff-4f70-8d05-e4a04253e20c
+mode: restart
+trigger:
+  - platform: time_pattern
+    minutes: "/10"
+  - platform: event
+    event_type:
+      - timer.cancelled
+      - timer.finished
+    event_data:
+      entity_id: timer.cover_kitchen
+condition:
+  - condition: state
+    entity_id: timer.cover_kitchen
+    state: "idle"
+  - condition: template
+    value_template: "{{ (as_timestamp(now()) - as_timestamp(states.cover.shelly_2_5_rc_kitchen.last_changed) | int(0)) > (states('input_number.cover_kitchen_detection') | int) }}"
+action:
+  - condition: template
+    value_template: "{{ not is_state('input_select.covers_mode', 'Manuel') }}"
+  - condition: template
+    value_template: "{{ not is_state('input_select.cover_kitchen_mode', 'Manuel') }}"
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: binary_sensor.presence_at_home
+            state: "off"
+          - condition: state
+            entity_id: binary_sensor.window_kitchen
+            state: "on"
+        sequence:
+          - service: input_number.set_value
+            target:
+              entity_id: input_number.cover_kitchen_desired_position
+            data:
+              value: 0
+      - conditions:
+          - condition: or
+            conditions:
+              - condition: state
+                entity_id: input_select.covers_mode
+                state: "Forcer ouverture"
+              - condition: state
+                entity_id: input_select.cover_kitchen_mode
+                state: "Forcer ouverture"
+        sequence:
+          - service: input_number.set_value
+            target:
+              entity_id: input_number.cover_kitchen_desired_position
+            data:
+              value: 100
+      - conditions:
+          - condition: or
+            conditions:
+              - condition: state
+                entity_id: input_select.covers_mode
+                state: "Forcer fermeture"
+              - condition: state
+                entity_id: input_select.cover_kitchen_mode
+                state: "Forcer fermeture"
+              - condition: state
+                entity_id: input_select.period_of_day
+                state: "Nuit"
+        sequence:
+          - service: input_number.set_value
+            target:
+              entity_id: input_number.cover_kitchen_desired_position
+            data:
+              value: 0
+      - conditions:
+          - condition: or
+            conditions:
+              - condition: state
+                entity_id: input_select.covers_mode
+                state: "Petits trous"
+              - condition: state
+                entity_id: input_select.cover_kitchen_mode
+                state: "Petits trous"
+        sequence:
+          - service: input_number.set_value
+            target:
+              entity_id: input_number.cover_kitchen_desired_position
+            data:
+              value: "{{ states('input_number.cover_kitchen_accurate_position') }}"
+    default:
+      - if:
+          - condition: state
+            entity_id: input_boolean.is_night
+            state: "on"
+        then:
+          - service: input_number.set_value
+            target:
+              entity_id: input_number.cover_kitchen_desired_position
+            data:
+              value: 0
+        else:
+          - service: input_number.set_value
+            target:
+              entity_id: input_number.cover_kitchen_desired_position
+            data:
+              value: 100

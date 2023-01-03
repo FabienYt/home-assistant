@@ -1,0 +1,33 @@
+---
+type: vertical-stack
+cards:
+  - type: custom:mushroom-title-card
+    title: Salle à manger
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: template
+        icon: "{% if is_state('binary_sensor.bay_window_dining_room', 'off') %}mdi:door-closed{% else %}mdi:door-open{% endif %}"
+        content: |-
+          {% if is_state('binary_sensor.bay_window_dining_room', 'off') %}
+            Fermée
+          {% else %}
+            {% if is_state_attr('binary_sensor.bay_window_dining_room', 'left_opened', true) and is_state_attr('binary_sensor.bay_window_dining_room', 'right_opened', false) %}
+              Ouverte à gauche
+            {% elif is_state_attr('binary_sensor.bay_window_dining_room', 'left_opened', false) and is_state_attr('binary_sensor.bay_window_dining_room', 'right_opened', true) %}
+              Ouverte à droite
+            {% else %}
+              Ouverte
+            {% endif %}
+          {% endif %}
+        icon_color: "{% if is_state('binary_sensor.bay_window_dining_room', 'off') %}green{% else %}red{% endif %}"
+        tap_action:
+          action: more-info
+        entity: binary_sensor.bay_window_dining_room
+  - type: tile
+    color: blue
+    entity: cover.shelly_2_5_rc_dining_room
+    features:
+      - type: cover-open-close
+  - type: entities
+    entities:
+      - input_select.cover_dining_room_mode

@@ -1,0 +1,39 @@
+---
+description: Homekit to Device Tracker
+alias: homekit_to_device_tracker
+id: be7d19d0-0671-464c-9a45-01d7af3f854c
+mode: queued
+max: 20
+trigger:
+  - platform: state
+    entity_id: input_boolean.charlene_at_home
+    id: charlene_at_home
+  - platform: state
+    entity_id: input_boolean.fabien_at_home
+    id: fabien_at_home
+  - platform: homeassistant
+    event: start
+    id: homeassistant_start
+action:
+  - if:
+      or:
+        - condition: trigger
+          id: charlene_at_home
+        - condition: trigger
+          id: homeassistant_start
+    then:
+      - service: device_tracker.see
+        data:
+          dev_id: homekit_charlene_at_home
+          location_name: "{{ 'home' if is_state('input_boolean.charlene_at_home', 'on') else 'not_home' }}"
+  - if:
+      or:
+        - condition: trigger
+          id: fabien_at_home
+        - condition: trigger
+          id: homeassistant_start
+    then:
+      - service: device_tracker.see
+        data:
+          dev_id: homekit_fabien_at_home
+          location_name: "{{ 'home' if is_state('input_boolean.fabien_at_home', 'on') else 'not_home' }}"

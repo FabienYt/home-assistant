@@ -1,0 +1,6 @@
+---
+platform: ping
+name: Ping - DNS - Cloudflare
+host: 1.1.1.1
+count: 2
+scan_interval: 60

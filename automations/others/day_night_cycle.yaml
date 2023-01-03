@@ -1,0 +1,57 @@
+---
+description: Day and night cycle
+alias: day_night_cycle
+id: 909b9c2b-eae6-4603-b073-3e3dec99858e
+mode: single
+trigger:
+  - platform: homeassistant
+    event: start
+  - platform: state
+    entity_id: sun.sun
+    attribute: elevation
+action:
+  - choose:
+      # Day
+      - conditions:
+          - condition: state
+            entity_id: input_boolean.is_night
+            state: "on"
+          - condition: template
+            value_template: "{{ state_attr('sun.sun', 'azimuth') < 180 }}"
+          - condition: or
+            conditions:
+              - condition: template
+                value_template: "{{ state_attr('sun.sun', 'elevation') >= 20 }}"
+              - condition: and
+                conditions:
+                  - condition: template
+                    value_template: "{{ state_attr('sun.sun', 'elevation') < 20 }}"
+                  - condition: numeric_state
+                    entity_id: sensor.garden_south_brightness_sensor_illuminance_lux
+                    above: input_number.threshold_day_night_illuminance
+        sequence:
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.is_night
+      # Night
+      - conditions:
+          - condition: state
+            entity_id: input_boolean.is_night
+            state: "off"
+          - condition: template
+            value_template: "{{ state_attr('sun.sun', 'azimuth') > 180 }}"
+          - condition: or
+            conditions:
+              - condition: template
+                value_template: "{{ state_attr('sun.sun', 'elevation') <= -20 }}"
+              - condition: and
+                conditions:
+                  - condition: template
+                    value_template: "{{ state_attr('sun.sun', 'elevation') > -20 }}"
+                  - condition: numeric_state
+                    entity_id: sensor.garden_south_brightness_sensor_illuminance_lux
+                    below: input_number.threshold_day_night_illuminance
+        sequence:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.is_night

@@ -1,0 +1,96 @@
+---
+blueprint:
+  name: Cover - Suspend
+  description: "Version: 1.0.0"
+  domain: automation
+
+  input:
+    cover:
+      name: Roller shutter
+      selector:
+        entity:
+          domain: cover
+    timer:
+      name: Timer
+      description: Timer used for remaining suspension time
+      selector:
+        entity:
+          domain: timer
+    position:
+      name: Desired roller shutter position
+      selector:
+        entity:
+          domain: input_number
+    duration:
+      name: Duration of roller shutter suspension
+      selector:
+        entity:
+          domain: input_datetime
+    detection:
+      name: Time to complete a full opening or closing motion
+      selector:
+        entity:
+          domain: input_number
+    check_enable:
+      name: Enable the verification of a condition before automatic positioning of the roller shutter
+      selector:
+        select:
+          options:
+            - "Yes"
+            - "No"
+    check_entity:
+      name: Condition to be checked
+      description: Condition checked for enable automatic management. If this condition is false, the roller shutter is never suspend
+      default: ""
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class: running
+
+variables:
+  check_enable: !input check_enable
+  check_entity: !input check_entity
+  cover: !input cover
+  duration: !input duration
+  position: !input position
+  condition: '{% if check_enable == "No" or (check_enable == "Yes" and check_entity in ["","None"]) %}{{True}}{% else %}{{ is_state(check_entity, "on") }}{% endif %}'
+
+mode: restart
+max_exceeded: silent
+
+trigger_variables:
+  trigger_detection: !input detection
+
+trigger:
+  - platform: state
+    entity_id: !input cover
+    attribute: current_position
+    for:
+      seconds: "{{ states(trigger_detection) | float(60) }}"
+    id: state_detection_for
+  - platform: state
+    entity_id: !input position
+    for:
+      seconds: "{{ states(trigger_detection) | float(60) }}"
+    id: state_detection_for
+
+condition:
+  - condition: state
+    entity_id: !input timer
+    state: "idle"
+  - condition: template
+    value_template: "{{ condition }}"
+  - condition: template
+    value_template: "{{ (state_attr(cover, 'current_position') | int(0)) != (states(position) | int(0)) }}"
+
+action:
+  - service: timer.start
+    data:
+      duration: "{{ states(duration) }}"
+    target:
+      entity_id: !input timer
+  - service: input_number.set_value
+    target:
+      entity_id: !input position
+    data:
+      value: -1

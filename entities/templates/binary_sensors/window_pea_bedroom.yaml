@@ -1,0 +1,6 @@
+---
+name: Window - Pea bedroom
+state: "{{ is_state('binary_sensor.pea_window_bottom_contact_sensor_contact', 'on') or is_state('binary_sensor.pea_window_top_contact_sensor_contact', 'on') }}"
+device_class: window
+attributes:
+  oscillating: "{{ is_state('binary_sensor.pea_window_bottom_contact_sensor_contact', 'off') and is_state('binary_sensor.pea_window_top_contact_sensor_contact', 'on') }}"

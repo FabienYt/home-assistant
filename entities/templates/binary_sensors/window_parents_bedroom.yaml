@@ -1,0 +1,6 @@
+---
+name: Window - Parents bedroom
+state: "{{ is_state('binary_sensor.parents_bedroom_window_bottom_contact_sensor_contact', 'on') or is_state('binary_sensor.parents_bedroom_window_top_contact_sensor_contact', 'on') }}"
+device_class: window
+attributes:
+  oscillating: "{{ is_state('binary_sensor.parents_bedroom_window_bottom_contact_sensor_contact', 'off') and is_state('binary_sensor.parents_bedroom_window_top_contact_sensor_contact', 'on') }}"

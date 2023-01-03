@@ -1,0 +1,7 @@
+---
+input_select.covers_mode:
+  friendly_name: Mode des volets roulants
+input_select.home_mode:
+  friendly_name: Mode de la maison
+input_select.period_of_day:
+  friendly_name: Nycthémère

@@ -1,0 +1,25 @@
+---
+description: Presence at home - Notify
+alias: presence_at_home_notify
+id: db5f4672-c106-4beb-82fd-67746e01fea7
+mode: queued
+max: 20
+trigger:
+  - platform: state
+    entity_id:
+      - input_boolean.charlene_at_home
+      - input_boolean.fabien_at_home
+action:
+  - service: notify.maison_telegram
+    data:
+      message: >
+        {% if trigger.to_state.entity_id == 'input_boolean.charlene_at_home' %}
+          {% set person = 'Charlène' %}
+        {% else %}
+          {% set person = 'Fabien' %}
+        {% endif %}
+        {% if is_state(trigger.entity_id, 'on') %}
+          {{ "🏡 *%s* vient de rentrer à la maison" % person }}
+        {% else %}
+          {{ "🚗 *%s* vient de partir de la maison" % person }}
+        {% endif %}

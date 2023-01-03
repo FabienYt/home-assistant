@@ -1,0 +1,36 @@
+---
+description: Period of day - Status
+alias: period_of_day_status
+id: 4f87909c-6c0f-4618-a440-51df11d9d25a
+mode: restart
+trigger:
+  - platform: state
+    entity_id: input_select.home_mode
+action:
+  if:
+    - condition: state
+      entity_id: input_select.home_mode
+      state: "Présent"
+  then:
+    if:
+      - condition: state
+        entity_id: input_boolean.is_night
+        state: "off"
+    then:
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.period_of_day
+        data:
+          option: Jour
+    else:
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.period_of_day
+        data:
+          option: Nuit
+  else:
+    - service: input_select.select_option
+      target:
+        entity_id: input_select.period_of_day
+      data:
+        option: Jour

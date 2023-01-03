@@ -1,0 +1,11 @@
+---
+title: Loudou
+kiosk_mode:
+  user_settings:
+    - users:
+        - "Tablet"
+      kiosk: true
+views:
+  - !include ./views/house.yaml
+  - !include ./views/energy.yaml
+  - !include ./views/settings.yaml

@@ -1,0 +1,34 @@
+---
+path: house
+title: Maison
+icon: mdi:home-outline
+cards:
+  - type: vertical-stack
+    cards:
+      - type: custom:mushroom-title-card
+        title: Maison
+      - type: horizontal-stack
+        cards:
+          - type: custom:mushroom-person-card
+            entity: device_tracker.homekit_charlene_at_home
+            name: Charlène
+          - type: custom:mushroom-person-card
+            entity: device_tracker.homekit_fabien_at_home
+            name: Fabien
+      - type: entities
+        entities:
+          - input_select.home_mode
+          - input_select.period_of_day
+          - input_select.covers_mode
+  - !include rooms/pantry.yaml
+  - !include rooms/kitchen.yaml
+  - !include rooms/dining_room.yaml
+  - !include rooms/living_room.yaml
+  - !include rooms/hall.yaml
+  - !include rooms/office.yaml
+  - !include rooms/toilet.yaml
+  - !include rooms/parents_bedroom.yaml
+  - !include rooms/pea_bedroom.yaml
+  - !include rooms/bathroom.yaml
+  - !include rooms/garage.yaml
+  - !include rooms/garden.yaml

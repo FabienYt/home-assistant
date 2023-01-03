@@ -1,0 +1,41 @@
+---
+path: energy
+title: Énergie
+icon: mdi:lightning-bolt
+cards:
+  - type: vertical-stack
+    cards:
+      - type: energy-date-selection
+      - type: energy-usage-graph
+      - type: energy-sources-table
+      - type: energy-devices-graph
+  - type: entities
+    title: Puissance
+    entities:
+      - label: Entrée
+        type: section
+      - type: custom:multiple-entity-row
+        entity: sensor.plug_s_hall_amazon_fire_power
+        name: Tablette - Amazon fire
+        secondary_info: last-changed
+      - label: Bureau
+        type: section
+      - type: custom:multiple-entity-row
+        entity: sensor.plug_s_office_computer_power
+        name: Ordinateur
+        secondary_info: last-changed
+  - type: entities
+    title: Informations
+    entities:
+      - type: custom:multiple-entity-row
+        entity: sensor.teleinfo_index_heures_pleines
+        secondary_info: last-changed
+      - type: custom:multiple-entity-row
+        entity: sensor.teleinfo_index_heures_creuses
+        secondary_info: last-changed
+      - type: custom:multiple-entity-row
+        entity: sensor.teleinfo_puissance_apparente
+        secondary_info: last-changed
+        entities:
+          - entity: sensor.teleinfo_intensite
+            name: Intensité

@@ -1,0 +1,68 @@
+---
+description: Manage hall lights
+alias: manage_hall_lights
+id: 7e3b17cc-3484-454b-b995-af7381d9f1ff
+mode: restart
+trigger:
+  - platform: state
+    entity_id: binary_sensor.hall_motion_sensor_occupancy
+action:
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: binary_sensor.hall_motion_sensor_occupancy
+            state: "off"
+        sequence:
+          - service: light.turn_off
+            target:
+              entity_id:
+                - light.hall_bulb_ceiling_huelight
+                - light.hall_bulb_shoe_storage_huelight
+      - conditions:
+          - condition: state
+            entity_id: binary_sensor.hall_motion_sensor_occupancy
+            state: "on"
+          - condition: numeric_state
+            entity_id: sensor.hall_motion_sensor_illuminance_lux
+            below: input_number.threshold_hall_lights_turn_on_illuminance
+          - condition: state
+            entity_id: binary_sensor.need_dimmed_lights
+            state: "off"
+        sequence:
+          - service: light.turn_on
+            data:
+              brightness_pct: "{{ states('input_number.threshold_hall_lights_turn_on_brightness_max') }}"
+              kelvin: "{{ state_attr('sensor.circadian_values', 'colortemp') | int }}"
+            target:
+              entity_id: light.hall_bulb_ceiling_huelight
+      - conditions:
+          - condition: state
+            entity_id: binary_sensor.hall_motion_sensor_occupancy
+            state: "on"
+          - condition: state
+            entity_id: binary_sensor.need_dimmed_lights
+            state: "on"
+          - condition: time
+            after: "12:00:00"
+            before: "22:30:00"
+        sequence:
+          - service: light.turn_on
+            data:
+              brightness_pct: "{{ states('input_number.threshold_hall_lights_turn_on_brightness_max') }}"
+              kelvin: "{{ state_attr('sensor.circadian_values', 'colortemp') | int }}"
+            target:
+              entity_id: light.hall_bulb_ceiling_huelight
+      - conditions:
+          - condition: state
+            entity_id: binary_sensor.hall_motion_sensor_occupancy
+            state: "on"
+          - condition: state
+            entity_id: binary_sensor.need_dimmed_lights
+            state: "on"
+        sequence:
+          - service: light.turn_on
+            data:
+              brightness_pct: "{{ states('input_number.threshold_hall_lights_turn_on_brightness_min') }}"
+              kelvin: "{{ state_attr('sensor.circadian_values', 'colortemp') | int }}"
+            target:
+              entity_id: light.hall_bulb_shoe_storage_huelight

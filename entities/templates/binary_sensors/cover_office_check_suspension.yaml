@@ -1,0 +1,4 @@
+---
+name: Cover - Office - Check suspension
+state: "{{ not is_state('input_select.cover_office_mode', 'Manuel') and not is_state('input_select.covers_mode', 'Manuel') }}"
+device_class: running

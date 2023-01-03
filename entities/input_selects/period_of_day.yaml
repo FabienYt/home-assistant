@@ -1,0 +1,7 @@
+---
+name: Period of day
+options:
+  - Jour
+  - Nuit
+  - Nuit - chambres
+icon: mdi:theme-light-dark

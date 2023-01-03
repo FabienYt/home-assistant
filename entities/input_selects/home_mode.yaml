@@ -1,0 +1,7 @@
+---
+name: Home mode
+options:
+  - Présent
+  - Absent
+  - Vacances
+icon: mdi:home

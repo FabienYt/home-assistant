@@ -1,0 +1,109 @@
+---
+blueprint:
+  name: Cover - Move
+  description: "Version: 1.0.0"
+  domain: automation
+
+  input:
+    cover:
+      name: Roller shutter
+      selector:
+        entity:
+          domain: cover
+    timer:
+      name: Timer
+      description: Timer used for remaining suspension time
+      selector:
+        entity:
+          domain: timer
+    position:
+      name: Desired roller shutter position
+      selector:
+        entity:
+          domain: input_number
+    detection:
+      name: Time to complete a full opening or closing motion
+      selector:
+        entity:
+          domain: input_number
+    precision_enable:
+      name: Enable accurate positioning
+      selector:
+        select:
+          options:
+            - "Yes"
+            - "No"
+    precision_entity:
+      name: Accurate position
+      description: Entity indicating for which value the precise positioning should be used (optional)
+      default: ""
+      selector:
+        entity:
+          domain: input_number
+
+variables:
+  cover: !input cover
+  detection: !input detection
+  position: !input position
+  precision_enable: !input precision_enable
+  precision_entity: !input precision_entity
+  condition: '{% if precision_enable == "No" or (precision_enable == "Yes" and precision_entity in ["","None"]) %}{{False}}{% else %}{{ (states(position) | int(0)) == (states(precision_entity) | int(0)) }}{% endif %}'
+  in_motion: '{{ is_state(cover, "opening") or is_state(cover, "closing") }}'
+
+mode: restart
+max_exceeded: silent
+
+trigger:
+  - platform: state
+    entity_id: !input position
+
+condition:
+  - condition: state
+    entity_id: !input timer
+    state: "idle"
+  - condition: template
+    value_template: "{{ (states(position) | int(0)) >= 0 }}"
+  - condition: template
+    value_template: "{{ in_motion is true or (in_motion is false and (states(position) | int(0)) != (state_attr(cover, 'current_position') | int(0))) }}"
+
+action:
+  - if:
+      - condition: template
+        value_template: "{{ in_motion is true }}"
+    then:
+      - service: cover.stop_cover
+        target:
+          entity_id: !input cover
+  - if:
+      - condition: template
+        value_template: "{{ condition }}"
+      - condition: template
+        value_template: "{{ (state_attr(cover, 'current_position') | int(0)) != 0 }}"
+    then:
+      - service: cover.close_cover
+        target:
+          entity_id: !input cover
+      - wait_template: "{{ (state_attr(cover, 'current_position') | int(0)) == 0 }}"
+        timeout: "{{ states(detection) | int }}"
+        continue_on_timeout: false
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ (states(position) | int(100)) == 0 }}"
+        sequence:
+          - service: cover.close_cover
+            target:
+              entity_id: !input cover
+      - conditions:
+          - condition: template
+            value_template: "{{ (states(position) | int(0)) == 100 }}"
+        sequence:
+          - service: cover.open_cover
+            target:
+              entity_id: !input cover
+    default:
+      - service: cover.set_cover_position
+        target:
+          entity_id: !input cover
+        data:
+          position: "{{ states(position) }}"

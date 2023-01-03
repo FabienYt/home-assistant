@@ -1,0 +1,29 @@
+---
+type: vertical-stack
+cards:
+  - type: custom:mushroom-title-card
+    title: Salle de bain
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: entity
+        entity: sensor.bathroom_temperature_humidity_sensor_temperature
+        icon_color: orange
+      - type: entity
+        entity: sensor.bathroom_temperature_humidity_sensor_humidity
+        icon_color: blue
+      - type: template
+        icon: "{% if is_state('binary_sensor.window_bathroom', 'off') %}mdi:window-closed{% else %}mdi:window-open{% endif %}"
+        content: |-
+          {% if is_state('binary_sensor.window_bathroom', 'off') %}
+            Fermée
+          {% else %}
+            {% if is_state_attr('binary_sensor.window_bathroom', 'oscillating', true) %}
+              Ouverte en oscillobattant
+            {% else %}
+              Ouverte
+            {% endif %}
+          {% endif %}
+        icon_color: "{% if is_state('binary_sensor.window_bathroom', 'off') %}green{% else %}red{% endif %}"
+        tap_action:
+          action: more-info
+        entity: binary_sensor.window_bathroom

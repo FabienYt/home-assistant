@@ -1,0 +1,273 @@
+- description: Cover - Dining room - Immediate conditions
+  alias: cover_dining_room_immediate_conditions
+  id: 1e1d051e-17f2-4744-bead-dde184713360
+  use_blueprint:
+    path: FabienYt/cover_immediate.yaml
+    input:
+      entities_condition:
+      - binary_sensor.presence_at_home
+      - input_select.period_of_day
+      - input_select.cover_dining_room_mode
+      - input_select.covers_mode
+      timer: timer.cover_dining_room
+      position: input_number.cover_dining_room_desired_position
+      automation: automation.cover_dining_room_positioning
+- description: Cover - Dining room - Move
+  alias: cover_dining_room_move
+  id: 689656a4-771c-4c00-9653-13cc2796d765
+  use_blueprint:
+    path: FabienYt/cover_move.yaml
+    input:
+      cover: cover.shelly_2_5_rc_dining_room
+      timer: timer.cover_dining_room
+      position: input_number.cover_dining_room_desired_position
+      precision_enable: 'Yes'
+      precision_entity: input_number.cover_dining_room_accurate_position
+      detection: input_number.cover_dining_room_detection
+- description: Cover - Dining room - Suspend
+  alias: cover_dining_room_suspend
+  id: 59ccf121-a81e-46ad-8a3d-d09cd6616008
+  use_blueprint:
+    path: FabienYt/cover_suspend.yaml
+    input:
+      cover: cover.shelly_2_5_rc_dining_room
+      timer: timer.cover_dining_room
+      position: input_number.cover_dining_room_desired_position
+      duration: input_datetime.covers_duration_suspension
+      detection: input_number.cover_dining_room_detection
+      check_enable: 'Yes'
+      check_entity: binary_sensor.cover_dining_room_check_suspension
+- description: Cover - Kitchen - Immediate conditions
+  alias: cover_kitchen_immediate_conditions
+  id: 007c0c14-e27d-4934-aaf0-07fadba79f53
+  use_blueprint:
+    path: FabienYt/cover_immediate.yaml
+    input:
+      entities_condition:
+      - binary_sensor.presence_at_home
+      - input_select.period_of_day
+      - input_select.cover_kitchen_mode
+      - input_select.covers_mode
+      timer: timer.cover_kitchen
+      position: input_number.cover_kitchen_desired_position
+      automation: automation.cover_kitchen_positioning
+- description: Cover - Kitchen - Move
+  alias: cover_kitchen_move
+  id: 7bfb782c-9853-4fbe-9ad3-54eb592ae30c
+  use_blueprint:
+    path: FabienYt/cover_move.yaml
+    input:
+      cover: cover.shelly_2_5_rc_kitchen
+      timer: timer.cover_kitchen
+      position: input_number.cover_kitchen_desired_position
+      detection: input_number.cover_kitchen_detection
+      precision_enable: 'Yes'
+      precision_entity: input_number.cover_kitchen_accurate_position
+- description: Cover - Kitchen - Suspend
+  alias: cover_kitchen_suspend
+  id: 028ff0c1-75a6-468d-a8d2-2a79d7d08cef
+  use_blueprint:
+    path: FabienYt/cover_suspend.yaml
+    input:
+      cover: cover.shelly_2_5_rc_kitchen
+      timer: timer.cover_kitchen
+      position: input_number.cover_kitchen_desired_position
+      duration: input_datetime.covers_duration_suspension
+      detection: input_number.cover_kitchen_detection
+      check_enable: 'Yes'
+      check_entity: binary_sensor.cover_kitchen_check_suspension
+- description: Cover - Living room - Immediate conditions
+  alias: cover_living_room_immediate_conditions
+  id: 8de14699-b479-4afc-a64f-6c771b93e2f3
+  use_blueprint:
+    path: FabienYt/cover_immediate.yaml
+    input:
+      entities_condition:
+      - binary_sensor.presence_at_home
+      - input_select.period_of_day
+      - input_select.cover_living_room_mode
+      - input_select.covers_mode
+      timer: timer.cover_living_room
+      position: input_number.cover_living_room_desired_position
+      automation: automation.cover_living_room_positioning
+- description: Cover - Living room - Move
+  alias: cover_living_room_move
+  id: 8ad35d43-817b-41b4-af58-ce3dca5d9031
+  use_blueprint:
+    path: FabienYt/cover_move.yaml
+    input:
+      cover: cover.shelly_2_5_rc_living_room
+      timer: timer.cover_living_room
+      position: input_number.cover_living_room_desired_position
+      detection: input_number.cover_living_room_detection
+      precision_enable: 'Yes'
+      precision_entity: input_number.cover_living_room_accurate_position
+- description: Cover - Living room - Suspend
+  alias: cover_living_room_suspend
+  id: 1cc271ad-ba8b-430a-a251-b41d9c945bbf
+  use_blueprint:
+    path: FabienYt/cover_suspend.yaml
+    input:
+      cover: cover.shelly_2_5_rc_living_room
+      timer: timer.cover_living_room
+      position: input_number.cover_living_room_desired_position
+      duration: input_datetime.covers_duration_suspension
+      detection: input_number.cover_living_room_detection
+      check_enable: 'Yes'
+      check_entity: binary_sensor.cover_living_room_check_suspension
+- description: Cover - Office - Immediate conditions
+  alias: cover_office_immediate_conditions
+  id: 6262b6b2-d317-4d35-a8b0-67cb902098de
+  use_blueprint:
+    path: FabienYt/cover_immediate.yaml
+    input:
+      entities_condition:
+      - binary_sensor.presence_at_home
+      - input_select.period_of_day
+      - input_select.cover_office_mode
+      - input_select.covers_mode
+      timer: timer.cover_office
+      position: input_number.cover_office_desired_position
+      automation: automation.cover_office_positioning
+- description: Cover - Office - Move
+  alias: cover_office_move
+  id: a11331df-0c7d-43f5-b3b3-f6292439744b
+  use_blueprint:
+    path: FabienYt/cover_move.yaml
+    input:
+      cover: cover.shelly_2_5_rc_office
+      timer: timer.cover_office
+      position: input_number.cover_office_desired_position
+      detection: input_number.cover_office_detection
+      precision_enable: 'Yes'
+      precision_entity: input_number.cover_office_accurate_position
+- description: Cover - Office - Suspend
+  alias: cover_office_suspend
+  id: a136c42a-5592-4d54-af88-01675f082bd4
+  use_blueprint:
+    path: FabienYt/cover_suspend.yaml
+    input:
+      cover: cover.shelly_2_5_rc_office
+      timer: timer.cover_office
+      position: input_number.cover_office_desired_position
+      duration: input_datetime.covers_duration_suspension
+      detection: input_number.cover_office_detection
+      check_enable: 'Yes'
+      check_entity: binary_sensor.cover_office_check_suspension
+- description: Cover - Pantry - Immediate conditions
+  alias: cover_pantry_immediate_conditions
+  id: 2cea8e84-0eee-49e5-aa05-9fcda6b0a560
+  use_blueprint:
+    path: FabienYt/cover_immediate.yaml
+    input:
+      entities_condition:
+      - binary_sensor.presence_at_home
+      - input_select.period_of_day
+      - input_select.cover_pantry_mode
+      - input_select.covers_mode
+      timer: timer.cover_pantry
+      position: input_number.cover_pantry_desired_position
+      automation: automation.cover_pantry
+- description: Cover - Pantry - Move
+  alias: cover_pantry_move
+  id: 84e8180d-f4b9-4ca3-bef8-5655b759512e
+  use_blueprint:
+    path: FabienYt/cover_move.yaml
+    input:
+      cover: cover.shelly_2_5_rc_pantry
+      timer: timer.cover_pantry
+      position: input_number.cover_pantry_desired_position
+      detection: input_number.cover_pantry_detection
+      precision_enable: 'Yes'
+      precision_entity: input_number.cover_pantry_accurate_position
+- description: Cover - Pantry - Suspend
+  alias: cover_pantry_suspend
+  id: 5fb57be7-2cbf-48f3-9fdc-0d8fac88d8f2
+  use_blueprint:
+    path: FabienYt/cover_suspend.yaml
+    input:
+      cover: cover.shelly_2_5_rc_pantry
+      timer: timer.cover_pantry
+      position: input_number.cover_pantry_desired_position
+      duration: input_datetime.covers_duration_suspension
+      detection: input_number.cover_pantry_detection
+      check_enable: 'Yes'
+      check_entity: binary_sensor.cover_pantry_check_suspension
+- description: Cover - Parents bedroom - Immediate conditions
+  alias: cover_parents_bedroom_immediate_conditions
+  id: f0ac1317-35d5-47c2-b2fc-01329d8de255
+  use_blueprint:
+    path: FabienYt/cover_immediate.yaml
+    input:
+      entities_condition:
+      - binary_sensor.presence_at_home
+      - input_select.period_of_day
+      - input_select.cover_parents_bedroom_mode
+      - input_select.covers_mode
+      timer: timer.cover_parents_bedroom
+      position: input_number.cover_parents_bedroom_desired_position
+      automation: automation.cover_parents_bedroom_positioning
+- description: Cover - Parents bedroom - Move
+  alias: cover_parents_bedroom_move
+  id: 793480cd-413a-4de8-afed-d6b1e62d828e
+  use_blueprint:
+    path: FabienYt/cover_move.yaml
+    input:
+      cover: cover.shelly_2_5_rc_parents_bedroom
+      timer: timer.cover_parents_bedroom
+      position: input_number.cover_parents_bedroom_desired_position
+      detection: input_number.cover_parents_bedroom_detection
+      precision_enable: 'Yes'
+      precision_entity: input_number.cover_parents_bedroom_accurate_position
+- description: Cover - Parents bedroom - Suspend
+  alias: cover_parents_bedroom_suspend
+  id: d4a61b46-ec5d-45e5-90c1-7c4c7fe8f043
+  use_blueprint:
+    path: FabienYt/cover_suspend.yaml
+    input:
+      cover: cover.shelly_2_5_rc_parents_bedroom
+      timer: timer.cover_parents_bedroom
+      position: input_number.cover_parents_bedroom_desired_position
+      duration: input_datetime.covers_duration_suspension
+      detection: input_number.cover_parents_bedroom_detection
+      check_enable: 'Yes'
+      check_entity: binary_sensor.cover_parents_bedroom_check_suspension
+- description: Cover - Pea bedroom - Immediate conditions
+  alias: cover_pea_bedroom_immediate_conditions
+  id: 848bf646-5a07-4ce3-9c9b-636b290a56a1
+  use_blueprint:
+    path: FabienYt/cover_immediate.yaml
+    input:
+      entities_condition:
+      - binary_sensor.presence_at_home
+      - input_select.period_of_day
+      - input_select.cover_pea_bedroom_mode
+      - input_select.covers_mode
+      timer: timer.cover_pea_bedroom
+      position: input_number.cover_pea_bedroom_desired_position
+      automation: automation.cover_pea_bedroom_positioning
+- description: Cover - Pea bedroom - Move
+  alias: cover_pea_bedroom_move
+  id: d847d273-2fa9-4494-9ad7-08696dcf4fac
+  use_blueprint:
+    path: FabienYt/cover_move.yaml
+    input:
+      cover: cover.shelly_2_5_rc_pea_bedroom
+      timer: timer.cover_pea_bedroom
+      position: input_number.cover_pea_bedroom_desired_position
+      detection: input_number.cover_pea_bedroom_detection
+      precision_enable: 'Yes'
+      precision_entity: input_number.cover_pea_bedroom_accurate_position
+- description: Cover - Pea bedroom - Suspend
+  alias: cover_pea_bedroom_suspend
+  id: eb461554-8e7c-4e1c-beba-79cf82ba16d7
+  use_blueprint:
+    path: FabienYt/cover_suspend.yaml
+    input:
+      cover: cover.shelly_2_5_rc_pea_bedroom
+      timer: timer.cover_pea_bedroom
+      position: input_number.cover_pea_bedroom_desired_position
+      duration: input_datetime.covers_duration_suspension
+      detection: input_number.cover_pea_bedroom_detection
+      check_enable: 'Yes'
+      check_entity: binary_sensor.cover_pea_bedroom_check_suspension

@@ -1,0 +1,15 @@
+---
+description: Hall - Bulb ceiling - Unavailable - Notify
+alias: hall_bulb_ceiling_unavailable_notify
+id: 44bb4f7d-6b8a-4925-8ddf-2a8ecbff4716
+mode: single
+trigger:
+  - platform: state
+    entity_id: sensor.unavailable_lights
+condition:
+  - condition: template
+    value_template: "{{ 'Hall - Bulb - Ceiling Huelight' in state_attr('sensor.unavailable_lights', 'lights') }}"
+action:
+  - service: notify.maison_telegram
+    data:
+      message: ⚠️ L'ampoule du plafond de l'entrée est indisponible. Il faut vérifier l'interrupteur !

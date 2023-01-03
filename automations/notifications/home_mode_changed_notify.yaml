@@ -1,0 +1,15 @@
+---
+description: Home mode changed - Notify
+alias: home_mode_changed_notify
+id: 1fcc6ea7-8d47-4d19-af1e-097a2ec2c42a
+mode: queued
+max: 20
+trigger:
+  - platform: state
+    entity_id: input_select.home_mode
+action:
+  - delay:
+      seconds: 10
+  - service: notify.maison_telegram
+    data:
+      message: 🏡 La maison vient de passer en mode *{{ states('input_select.home_mode') }}* ({{ states('input_select.period_of_day') }})

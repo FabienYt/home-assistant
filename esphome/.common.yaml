@@ -1,0 +1,52 @@
+---
+# Core Configuration: https://esphome.io/components/esphome.html
+esphome:
+  name: ${esphome_name}
+
+# WiFi Component: https://esphome.io/components/wifi.html
+wifi:
+  ssid: !secret esphome_wifi_ssid
+  password: !secret esphome_wifi_password
+  ap:
+    ssid: "FH - ${devicename}"
+    password: !secret esphome_wifi_ap_password
+
+# OTA Update Component: https://esphome.io/components/ota.html
+ota:
+  password: !secret esphome_ota_password
+
+# Logger Component: https://esphome.io/components/logger.html
+logger:
+  level: $logger_level
+
+# Native API Component: https://esphome.io/components/api.html
+api:
+  encryption:
+    key: $api_encryption_key
+  password: $api_password
+
+# Captive Portal: https://esphome.io/components/captive_portal.html
+captive_portal:
+
+# Web Server: https://esphome.io/components/web_server.html
+web_server:
+  auth:
+    username: !secret esphome_web_server_username
+    password: !secret esphome_web_server_password
+  local: true
+  port: 80
+
+# Time: https://esphome.io/components/time.html
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+# Status Binary Sensor: https://esphome.io/components/binary_sensor/status.html
+binary_sensor:
+  - platform: status
+    name: "${devicename} - Status"
+
+# Restart Button: https://esphome.io/components/button/restart.html
+button:
+  - platform: restart
+    name: "${devicename} - Restart"

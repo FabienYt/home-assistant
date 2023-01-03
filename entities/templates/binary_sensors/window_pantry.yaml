@@ -1,0 +1,4 @@
+---
+name: Window - Pantry
+state: "{{ is_state('binary_sensor.pantry_window_contact_sensor_contact', 'on') }}"
+device_class: window

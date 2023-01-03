@@ -1,0 +1,35 @@
+---
+description: Tablet - Power supply
+alias: tablet_power_supply
+id: 5c4cd50c-af42-4cf9-84bb-024b6f339bc6
+mode: single
+max_exceeded: silent
+trigger:
+  - platform: homeassistant
+    event: start
+  - platform: event
+    event_type: automation_reloaded
+  - platform: numeric_state
+    entity_id: sensor.fire_tablet_battery
+    above: input_number.threshold_hall_tablet_battery_max
+  - platform: numeric_state
+    entity_id: sensor.fire_tablet_battery
+    below: input_number.threshold_hall_tablet_battery_min
+action:
+  - choose:
+      - conditions:
+          - condition: numeric_state
+            entity_id: sensor.fire_tablet_battery
+            above: input_number.threshold_hall_tablet_battery_max
+        sequence:
+          - service: switch.turn_off
+            target:
+              entity_id: switch.plug_s_hall_amazon_fire
+      - conditions:
+          - condition: numeric_state
+            entity_id: sensor.fire_tablet_battery
+            below: input_number.threshold_hall_tablet_battery_min
+        sequence:
+          - service: switch.turn_on
+            target:
+              entity_id: switch.plug_s_hall_amazon_fire

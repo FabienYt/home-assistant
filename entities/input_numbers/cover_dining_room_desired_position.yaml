@@ -1,0 +1,6 @@
+---
+name: Cover - Dining room - Desired position
+min: "-1"
+max: "100"
+step: "1"
+unit_of_measurement: "%"

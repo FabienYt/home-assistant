@@ -1,0 +1,16 @@
+---
+description: Repack recorder database
+alias: recorder_repack
+id: 0090f40f-2a4c-4653-a10d-9bc17f2c37ae
+mode: single
+trigger:
+  - platform: time
+    at: "05:55"
+condition:
+  - condition: time
+    weekday:
+      - sun
+action:
+  - service: recorder.purge
+    data:
+      repack: true

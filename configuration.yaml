@@ -1,0 +1,28 @@
+---
+# Welcome to my Home Assistant configuration!
+#
+# The configuration.yaml is only used to bootstrap the system.
+#
+homeassistant:
+  name: Home
+  latitude: !secret homeassistant_latitude
+  longitude: !secret homeassistant_longitude
+  elevation: 80
+  unit_system: metric
+  currency: EUR
+  time_zone: "Europe/Paris"
+  country: FR
+
+  # https://www.home-assistant.io/docs/authentication/providers/
+  auth_providers:
+    - type: homeassistant
+    - type: trusted_networks
+      trusted_networks:
+        - 192.168.42.160
+      trusted_users:
+        192.168.42.160: !secret user_tablet_id
+
+  # https://www.home-assistant.io/docs/configuration/packages/
+  packages: !include_dir_named integrations
+
+  internal_url: !secret homeassistant_internal_url

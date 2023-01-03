@@ -1,0 +1,16 @@
+---
+# https://www.home-assistant.io/integrations/recorder/
+#
+recorder:
+  db_url: !secret recorder_db_url
+  purge_keep_days: 7
+  auto_purge: false
+  exclude:
+    domains:
+      - media_player
+      - uptime
+    entity_globs:
+      - sensor.*_battery
+      - sensor.*_pressure
+      - sensor.*_energy_returned
+      - sensor.*_power_factor

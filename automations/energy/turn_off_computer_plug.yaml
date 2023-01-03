@@ -1,0 +1,19 @@
+---
+description: Turn off computer plug
+alias: turn_off_computer_plug
+id: 1ede949e-525c-4724-9c19-34e351b0414b
+mode: single
+trigger:
+  - platform: numeric_state
+    entity_id: sensor.plug_s_office_computer_power
+    below: 10
+    for:
+      seconds: 30
+condition:
+  - condition: state
+    entity_id: switch.plug_s_office_computer
+    state: "on"
+action:
+  - service: switch.turn_off
+    target:
+      entity_id: switch.plug_s_office_computer

@@ -1,0 +1,42 @@
+---
+description: Chack - Home mode - Status
+alias: check_home_mode_status
+id: f08e9349-b2ee-4155-bbe4-0c65cf9c4366
+mode: queued
+max: 20
+trigger:
+  - platform: state
+    entity_id: binary_sensor.presence_at_home
+  - platform: homeassistant
+    event: start
+condition:
+  condition: not
+  conditions:
+    - condition: state
+      entity_id: input_select.home_mode
+      state: "Vacances"
+action:
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: binary_sensor.presence_at_home
+            state: "on"
+        sequence:
+          - if:
+              - condition: not
+                conditions:
+                  - condition: state
+                    entity_id: input_select.home_mode
+                    state: "Présent"
+            then:
+              - service: input_select.select_option
+                target:
+                  entity_id: input_select.home_mode
+                data:
+                  option: Présent
+    default:
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.home_mode
+        data:
+          option: Absent

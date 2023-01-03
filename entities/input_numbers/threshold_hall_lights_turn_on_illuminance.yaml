@@ -1,0 +1,6 @@
+---
+name: Threshold - Hall lights - Turn on - Illuminance
+min: "0"
+max: "200"
+step: "1"
+unit_of_measurement: "lx"

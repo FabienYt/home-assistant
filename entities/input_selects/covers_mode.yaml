@@ -1,0 +1,10 @@
+---
+name: Covers - Mode
+options:
+  - Automatique
+  - Manuel
+  - Forcer ouverture
+  - Forcer fermeture
+  - Forcer fermeture - chambres
+  - Petits trous
+icon: mdi:window-shutter-open

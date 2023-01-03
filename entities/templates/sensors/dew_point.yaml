@@ -1,0 +1,18 @@
+---
+# https://en.wikipedia.org/wiki/Dew_point#Calculating_the_dew_point
+name: "Dew Point"
+unit_of_measurement: "°C"
+device_class: temperature
+state_class: measurement
+state: >-
+  {% set h = states('sensor.garden_temperature_humidity_sensor_humidity') | float(1.0) %}
+  {% set t = states('sensor.garden_temperature_humidity_sensor_temperature') | float(1.0) %}
+
+  {% set b = 17.62 %}
+  {% set c = 243.12 %}
+  {% set l = log(h / 100, e, 1.0) + ((b * t) / (c + t)) %}
+
+  {{ ((c * l) / (b - l)) | round(2) }}
+availability: >-
+  {{ is_number(states('sensor.garden_temperature_humidity_sensor_humidity')) and
+     is_number(states('sensor.garden_temperature_humidity_sensor_temperature')) }}

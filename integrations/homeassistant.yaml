@@ -1,0 +1,6 @@
+---
+# https://www.home-assistant.io/docs/configuration/customizing-devices/
+#
+homeassistant:
+  customize: !include ../customizations/entities.yaml
+  customize_glob: !include ../customizations/globs.yaml

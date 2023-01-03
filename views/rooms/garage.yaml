@@ -1,0 +1,13 @@
+---
+type: vertical-stack
+cards:
+  - type: custom:mushroom-title-card
+    title: Garage
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: entity
+        entity: sensor.garage_temperature_humidity_sensor_temperature
+        icon_color: orange
+      - type: entity
+        entity: sensor.garage_temperature_humidity_sensor_humidity
+        icon_color: blue

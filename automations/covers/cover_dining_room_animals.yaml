@@ -1,0 +1,45 @@
+---
+description: Cover - Dining room - Animals
+alias: cover_dining_room_animals
+id: 007f0df6-c0ba-42e5-a5f8-12b6e8daf776
+mode: restart
+trigger:
+  - platform: state
+    entity_id: binary_sensor.dining_room_bay_window_right_contact_sensor_contact
+    to: "on"
+condition:
+  condition: or
+  conditions:
+    - condition: and
+      conditions:
+        - condition: template
+          value_template: "{{ (state_attr('cover.shelly_2_5_rc_dining_room', 'current_position') | int(0)) < (states('input_number.cover_dining_room_animals_position') | int(0)) }}"
+        - condition: state
+          entity_id: binary_sensor.cover_dining_room_check_suspension
+          state: "off"
+    - condition: and
+      conditions:
+        - condition: template
+          value_template: "{{ (states('input_number.cover_dining_room_desired_position') | int(0)) < (states('input_number.cover_dining_room_animals_position') | int(0)) }}"
+        - condition: template
+          value_template: "{{ (states('input_number.cover_dining_room_desired_position') | int(0)) > -1 }}"
+        - condition: state
+          entity_id: binary_sensor.cover_dining_room_check_suspension
+          state: "on"
+action:
+  - service: timer.start
+    data:
+      duration: "{{ states('input_datetime.covers_duration_suspension') }}"
+    target:
+      entity_id: timer.cover_dining_room
+  - service: input_number.set_value
+    target:
+      entity_id: input_number.cover_dining_room_desired_position
+    data:
+      value: -1
+  - service: cover.set_cover_position
+    target:
+      entity_id: cover.shelly_2_5_rc_dining_room
+    data:
+      position: "{{ states('input_number.cover_dining_room_animals_position') }}"
+

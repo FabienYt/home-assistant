@@ -1,0 +1,79 @@
+---
+description: Switch to night mode
+alias: switch_night_mode
+id: d2a21dd3-ecba-41a4-93ef-42b378ea3237
+mode: single
+trigger:
+  - platform: state
+    entity_id: input_boolean.is_night
+    from: "off"
+    to: "on"
+condition:
+  - condition: state
+    entity_id: input_boolean.is_night
+    state: "on"
+  - condition: state
+    entity_id: input_select.home_mode
+    state: "Présent"
+  - condition: state
+    entity_id: input_select.period_of_day
+    state: "Jour"
+action:
+  - service: notify.maison_telegram
+    data:
+      message: 🌜 Voulez-vous passer la maison en mode nuit ?
+      data:
+        inline_keyboard:
+          - "Oui:/yes, Non:/no"
+          - "Oui (chambres):/only-rooms"
+  - wait_for_trigger:
+      - platform: event
+        event_type: telegram_callback
+        event_data:
+          command: "/yes"
+      - platform: event
+        event_type: telegram_callback
+        event_data:
+          command: "/no"
+      - platform: event
+        event_type: telegram_callback
+        event_data:
+          command: "/only-rooms"
+  - service: telegram_bot.edit_message
+    data:
+      message_id: "{{ wait.trigger.event.data.message.message_id }}"
+      chat_id: "{{ wait.trigger.event.data.chat_id }}"
+      message: 🌜 Voulez-vous passer la maison en mode nuit ?
+      inline_keyboard: []
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ wait.trigger.event.data.command == '/yes' }}"
+        sequence:
+          - service: input_select.select_option
+            target:
+              entity_id: input_select.period_of_day
+            data:
+              option: Nuit
+          - service: notify.maison_telegram
+            data:
+              message: "🌘 La maison vient de passer en mode nuit !"
+      - conditions:
+          - condition: template
+            value_template: "{{ wait.trigger.event.data.command == '/no' }}"
+        sequence:
+          - service: notify.maison_telegram
+            data:
+              message: "☀️ La maison reste en mode jour !"
+      - conditions:
+          - condition: template
+            value_template: "{{ wait.trigger.event.data.command == '/only-rooms' }}"
+        sequence:
+          - service: input_select.select_option
+            target:
+              entity_id: input_select.period_of_day
+            data:
+              option: Nuit (Chambres)
+          - service: notify.maison_telegram
+            data:
+              message: "🌒 La maison vient de passer les chambres en mode nuit !"

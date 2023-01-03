@@ -1,0 +1,36 @@
+---
+description: Send notification if Samba Backup sensor change
+alias: samba_backup_status
+id: 7717842f-9a13-4159-8b72-0d5c68fe8095
+mode: queued
+max: 20
+trigger:
+  - platform: state
+    entity_id: sensor.samba_backup
+    not_to: "IDLE"
+action:
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: sensor.samba_backup
+            state: "RUNNING"
+        sequence:
+          - service: notify.fabien_telegram
+            data:
+              message: 🔄 Une sauvegarde est actuellement en cours !
+      - conditions:
+          - condition: state
+            entity_id: sensor.samba_backup
+            state: "SUCCEEDED"
+        sequence:
+          - service: notify.fabien_telegram
+            data:
+              message: ✅ La sauvegarde a réussi !
+      - conditions:
+          - condition: state
+            entity_id: sensor.samba_backup
+            state: "FAILED"
+        sequence:
+          - service: notify.fabien_telegram
+            data:
+              message: ❌ La sauvegarde a échoué !

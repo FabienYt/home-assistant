@@ -1,0 +1,6 @@
+---
+name: Threshold - Hall lights - Turn on - Brightness min
+min: "1"
+max: "100"
+step: "1"
+unit_of_measurement: "%"

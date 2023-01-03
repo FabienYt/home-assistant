@@ -1,0 +1,13 @@
+---
+description: Birthdays - Notify
+alias: birthdays_notify
+id: 64858408-3698-4e72-8c99-e680be64b1c5
+mode: queued
+max: 20
+trigger:
+  - platform: event
+    event_type: birthday
+action:
+  - service: notify.maison_telegram
+    data:
+      message: 🎁 Aujourd'hui, *{{ trigger.event.data.name }}* a *{{ trigger.event.data.age }}* ans !

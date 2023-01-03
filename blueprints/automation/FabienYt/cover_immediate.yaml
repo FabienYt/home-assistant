@@ -1,0 +1,52 @@
+---
+blueprint:
+  name: Cover - Immediate conditions
+  description: "Version: 1.0.0"
+  domain: automation
+
+  input:
+    entities_condition:
+      name: Immediate conditions
+      description: Select all entities that match your immediate conditions
+      selector:
+        entity:
+          multiple: true
+    timer:
+      name: Timer
+      description: Timer used for remaining suspension time
+      selector:
+        entity:
+          domain: timer
+    position:
+      name: Desired roller shutter position
+      selector:
+        entity:
+          domain: input_number
+    automation:
+      name: Roller shutter positioning
+      description: Automation containing roller shutter positioning rules
+      selector:
+        entity:
+          domain: automation
+
+mode: restart
+max_exceeded: silent
+
+trigger:
+  - platform: state
+    entity_id: !input entities_condition
+
+action:
+  - service: input_number.set_value
+    target:
+      entity_id: !input position
+    data:
+      value: -1
+  - service: timer.cancel
+    target:
+      entity_id: !input timer
+  - service: automation.trigger
+    data:
+      skip_condition: true
+    target:
+      entity_id: !input automation

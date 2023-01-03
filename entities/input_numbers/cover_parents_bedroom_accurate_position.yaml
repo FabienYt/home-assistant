@@ -1,0 +1,6 @@
+---
+name: Cover - Parents bedroom - Accurate position
+min: "0"
+max: "100"
+step: "1"
+unit_of_measurement: "%"

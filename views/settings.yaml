@@ -1,0 +1,163 @@
+---
+path: settings
+title: Configuration
+icon: mdi:cog
+cards:
+  - type: entities
+    title: Volets roulants
+    entities:
+      - entity: input_datetime.covers_duration_suspension
+        name: Durée de suspension des volets roulants
+      - label: Cellier
+        type: section
+      - entity: input_number.cover_pantry_detection
+        name: Temps de détection avant suspension
+        type: custom:numberbox-card
+        icon: mdi:alarm
+        icon_plus: mdi:chevron-up
+        icon_minus: mdi:chevron-down
+      - entity: input_number.cover_pantry_accurate_position
+        name: Position - Petits trous
+        type: custom:numberbox-card
+        icon: mdi:window-shutter-settings
+        icon_plus: mdi:chevron-up
+        icon_minus: mdi:chevron-down
+      - label: Cuisine
+        type: section
+      - entity: input_number.cover_kitchen_detection
+        name: Temps de détection avant suspension
+        type: custom:numberbox-card
+        icon: mdi:alarm
+        icon_plus: mdi:chevron-up
+        icon_minus: mdi:chevron-down
+      - entity: input_number.cover_kitchen_accurate_position
+        name: Position - Petits trous
+        type: custom:numberbox-card
+        icon: mdi:window-shutter-settings
+        icon_plus: mdi:chevron-up
+        icon_minus: mdi:chevron-down
+      - label: Salle à manger
+        type: section
+      - entity: input_number.cover_dining_room_detection
+        name: Temps de détection avant suspension
+        type: custom:numberbox-card
+        icon: mdi:alarm
+        icon_plus: mdi:chevron-up
+        icon_minus: mdi:chevron-down
+      - entity: input_number.cover_dining_room_accurate_position
+        name: Position - Petits trous
+        type: custom:numberbox-card
+        icon: mdi:window-shutter-settings
+        icon_plus: mdi:chevron-up
+        icon_minus: mdi:chevron-down
+      - label: Salon
+        type: section
+      - entity: input_number.cover_living_room_detection
+        name: Temps de détection avant suspension
+        type: custom:numberbox-card
+        icon: mdi:alarm
+        icon_plus: mdi:chevron-up
+        icon_minus: mdi:chevron-down
+      - entity: input_number.cover_living_room_accurate_position
+        name: Position - Petits trous
+        type: custom:numberbox-card
+        icon: mdi:window-shutter-settings
+        icon_plus: mdi:chevron-up
+        icon_minus: mdi:chevron-down
+      - label: Bureau
+        type: section
+      - entity: input_number.cover_office_detection
+        name: Temps de détection avant suspension
+        type: custom:numberbox-card
+        icon: mdi:alarm
+        icon_plus: mdi:chevron-up
+        icon_minus: mdi:chevron-down
+      - entity: input_number.cover_office_accurate_position
+        name: Position - Petits trous
+        type: custom:numberbox-card
+        icon: mdi:window-shutter-settings
+        icon_plus: mdi:chevron-up
+        icon_minus: mdi:chevron-down
+      - label: Chambre des parents
+        type: section
+      - entity: input_number.cover_parents_bedroom_detection
+        name: Temps de détection avant suspension
+        type: custom:numberbox-card
+        icon: mdi:alarm
+        icon_plus: mdi:chevron-up
+        icon_minus: mdi:chevron-down
+      - entity: input_number.cover_parents_bedroom_accurate_position
+        name: Position - Petits trous
+        type: custom:numberbox-card
+        icon: mdi:window-shutter-settings
+        icon_plus: mdi:chevron-up
+        icon_minus: mdi:chevron-down
+      - label: Chambre de petit pois
+        type: section
+      - entity: input_number.cover_pea_bedroom_detection
+        name: Temps de détection avant suspension
+        type: custom:numberbox-card
+        icon: mdi:alarm
+        icon_plus: mdi:chevron-up
+        icon_minus: mdi:chevron-down
+      - entity: input_number.cover_pea_bedroom_accurate_position
+        name: Position - Petits trous
+        type: custom:numberbox-card
+        icon: mdi:window-shutter-settings
+        icon_plus: mdi:chevron-up
+        icon_minus: mdi:chevron-down
+  - type: entities
+    title: Entrée
+    entities:
+      - label: Tablette
+        type: section
+      - entity: input_number.threshold_hall_tablet_battery_max
+        name: Seuil de recharge de la batterie
+        type: custom:numberbox-card
+        icon: mdi:battery-80
+        icon_plus: mdi:chevron-up
+        icon_minus: mdi:chevron-down
+      - entity: input_number.threshold_hall_tablet_battery_min
+        name: Seuil de décharge de la batterie
+        type: custom:numberbox-card
+        icon: mdi:battery-20
+        icon_plus: mdi:chevron-up
+        icon_minus: mdi:chevron-down
+      - label: Éclairage automatique
+        type: section
+      - entity: input_number.threshold_hall_lights_turn_on_illuminance
+        name: Éclairement lumineux
+        type: custom:numberbox-card
+        icon: mdi:sun-wireless
+        icon_plus: mdi:chevron-up
+        icon_minus: mdi:chevron-down
+        secondary_info: >
+          <small>Seuil de déclenchement de l'éclairage automatique<br>
+          Éclairement lumineux actuel : %sensor.hall_motion_sensor_illuminance_lux:state lx</small>
+      - entity: input_number.threshold_hall_lights_turn_on_brightness_max
+        name: Luminosité des ampoules (jour)
+        type: custom:numberbox-card
+        icon: mdi:brightness-6
+        icon_plus: mdi:chevron-up
+        icon_minus: mdi:chevron-down
+        secondary_info: >
+          <small>Luminosité des ampoules à l'allumage</small>
+      - entity: input_number.threshold_hall_lights_turn_on_brightness_min
+        name: Luminosité des ampoules (nuit)
+        type: custom:numberbox-card
+        icon: mdi:brightness-6
+        icon_plus: mdi:chevron-up
+        icon_minus: mdi:chevron-down
+        secondary_info: >
+          <small>Luminosité des ampoules à l'allumage</small>
+  - type: entities
+    title: Jardin
+    entities:
+      - entity: input_number.threshold_day_night_illuminance
+        name: Seuil de luminosité (Jour / Nuit)
+        type: custom:numberbox-card
+        icon: mdi:theme-light-dark
+        icon_plus: mdi:chevron-up
+        icon_minus: mdi:chevron-down
+        secondary_info: >
+          <small>Éclairement lumineux actuel : %sensor.garden_south_brightness_sensor_illuminance_lux:state lx</small>

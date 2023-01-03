@@ -1,0 +1,9 @@
+---
+# https://www.home-assistant.io/integrations/light.group/
+#
+platform: group
+name: "Living room - TV unit - Lights"
+unique_id: a3cca972-86df-46e9-9964-b5ff88758a87
+entities:
+  - light.living_room_tv_unit_hue_iris_huelight
+  - light.living_room_tv_unit_hue_striplight_huelight
