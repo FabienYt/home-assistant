@@ -74,6 +74,18 @@ action:
           - condition: or
             conditions:
               - condition: state
+                entity_id: input_select.cover_office_mode
+                state: "Travail"
+        sequence:
+          - service: input_number.set_value
+            target:
+              entity_id: input_number.cover_office_desired_position
+            data:
+              value: 55
+      - conditions:
+          - condition: or
+            conditions:
+              - condition: state
                 entity_id: input_select.covers_mode
                 state: "Petits trous"
               - condition: state
