@@ -1,0 +1,60 @@
+---
+description: Cover - Dining room - Switch remote
+alias: cover_dining_room_switch_remote
+id: 6176fa09-62da-4f56-914e-95c2d8436701
+mode: restart
+max_exceeded: silent
+trigger:
+  - platform: event
+    event_type: zha_event
+    event_data:
+      device_ieee: "58:8e:81:ff:fe:64:71:4b"
+action:
+  - variables:
+      command: "{{ trigger.event.data.command }}"
+  - if:
+      - condition: or
+        conditions:
+          - condition: template
+            value_template: "{{ command == 'on' }}"
+          - condition: template
+            value_template: "{{ command == 'move_with_on_off' }}"
+    then:
+      - service: input_select.select_option
+        target:
+          entity_id:
+            - input_select.cover_dining_room_mode
+        data:
+          option: "Forcer ouverture"
+  - if:
+      - condition: or
+        conditions:
+          - condition: template
+            value_template: "{{ command == 'off' }}"
+          - condition: template
+            value_template: "{{ command == 'move' }}"
+    then:
+      - if:
+          - condition: or
+            conditions:
+              - condition: state
+                entity_id: input_boolean.is_night
+                state: "on"
+              - condition: state
+                entity_id: input_select.period_of_day
+                state: "Nuit"
+        then:
+          - service: input_select.select_option
+            target:
+              entity_id:
+                - input_select.cover_dining_room_mode
+            data:
+              option: Automatique
+        else:
+          - service: input_select.select_option
+            target:
+              entity_id:
+                - input_select.cover_dining_room_mode
+            data:
+              option: "Forcer fermeture"
+
