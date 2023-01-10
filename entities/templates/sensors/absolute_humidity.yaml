@@ -2,7 +2,6 @@
 # https://pon.fr/dzvents-alerte-givre-et-calcul-humidite-absolue/
 name: "Absolute Humidity"
 unit_of_measurement: "g/m³"
-device_class: humidity
 state_class: measurement
 state: >-
   {% set h = states('sensor.garden_temperature_humidity_sensor_humidity') | float(1.0) %}
