@@ -9,14 +9,10 @@ trigger:
       - "00:00"
       - "08:00"
       - "12:00"
-      - "16:30"
-      - "20:00"
+      - "15:00"
+      - "18:00"
+      - "21:00"
 action:
-  - service: button.press
-    target:
-      entity_id: button.living_room_aqara_pet_feeder_feed
-  - delay:
-      seconds: 5
   - service: button.press
     target:
       entity_id: button.living_room_aqara_pet_feeder_feed
