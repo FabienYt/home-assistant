@@ -1,7 +1,7 @@
 ---
 blueprint:
   name: Cover - Suspend
-  description: "Version: 1.0.0"
+  description: "Version: 1.0.1"
   domain: automation
 
   input:
@@ -32,7 +32,7 @@ blueprint:
         entity:
           domain: input_number
     check_enable:
-      name: Enable the verification of a condition before automatic positioning of the roller shutter
+      name: Check a condition before automatic positioning
       selector:
         select:
           options:
