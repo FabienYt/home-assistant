@@ -3,7 +3,6 @@ substitutions:
   devicename: Teleinfo
   logger_level: info # debug pour obtenir dans les logs toutes les infos de la téléinformation
   api_encryption_key: !secret esphome_teleinfo_api_encryption_key
-  api_password: !secret esphome_teleinfo_api_password
 
 <<: !include .common.yaml
 

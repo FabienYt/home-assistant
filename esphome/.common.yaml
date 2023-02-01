@@ -23,7 +23,6 @@ logger:
 api:
   encryption:
     key: $api_encryption_key
-  password: $api_password
 
 # Captive Portal: https://esphome.io/components/captive_portal.html
 captive_portal:
