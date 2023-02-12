@@ -4,7 +4,7 @@ substitutions:
   logger_level: info # debug pour obtenir dans les logs toutes les infos de la téléinformation
   api_encryption_key: !secret esphome_teleinfo_api_encryption_key
 
-<<: !include .common.yaml
+<<: !include .common_wifi.yaml
 
 esp8266:
   board: d1_mini

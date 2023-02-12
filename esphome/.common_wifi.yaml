@@ -1,0 +1,13 @@
+---
+<<: !include .common.yaml
+
+# Captive Portal: https://esphome.io/components/captive_portal.html
+captive_portal:
+
+# WiFi Component: https://esphome.io/components/wifi.html
+wifi:
+  ssid: !secret esphome_wifi_ssid
+  password: !secret esphome_wifi_password
+  ap:
+    ssid: "FH - ${devicename}"
+    password: !secret esphome_wifi_ap_password
