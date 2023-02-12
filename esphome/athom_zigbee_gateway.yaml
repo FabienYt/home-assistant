@@ -1,0 +1,49 @@
+substitutions:
+  esphome_name: athom-zigbee-gateway
+  devicename: Athom - Zigbee gateway
+  logger_level: DEBUG
+  api_encryption_key: !secret esphome_athom_zigbee_gateway_api_encryption_key
+
+<<: !include .common.yaml
+
+button:
+  - platform: template
+    name: "Zigbee module - Reset"
+    id: zigbee_rst
+    on_press:
+      - switch.turn_on: zigbee_rst_gpio
+      - delay: 15ms
+      - switch.turn_off: zigbee_rst_gpio
+
+esp32:
+  board: nodemcu-32s
+  framework:
+    type: arduino
+
+ethernet:
+  type: LAN8720
+  mdc_pin: GPIO23
+  mdio_pin: GPIO18
+  clk_mode: GPIO17_OUT
+  phy_addr: 0
+
+external_components:
+  - source: github://oxan/esphome-stream-server
+
+stream_server:
+  uart_id: uart_zigbee
+  id: ss
+  port: 6638
+
+switch:
+  - platform: gpio
+    pin: 32
+    id: zigbee_rst_gpio
+    inverted: yes
+    restore_mode: ALWAYS_OFF
+
+uart:
+  id: uart_zigbee
+  baud_rate: 115200
+  rx_pin: GPIO14
+  tx_pin: GPIO12
