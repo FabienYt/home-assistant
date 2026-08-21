@@ -1,0 +1,23 @@
+---
+# Welcome to my Home Assistant configuration!
+#
+# The configuration.yaml is only used to bootstrap the system.
+# https://www.home-assistant.io/integrations/homeassistant/
+#
+homeassistant:
+  allowlist_external_dirs:
+    - "/config"
+
+  auth_providers:
+    - type: homeassistant
+    - type: command_line
+      command: /config/lldap-ha-auth.sh
+      args:
+        - !secret lldap_url
+        - homeassistant_user
+        - homeassistant_admin
+        - homeassistant_local
+      meta: true
+
+  # https://www.home-assistant.io/docs/configuration/packages/
+  packages: !include_dir_named integrations

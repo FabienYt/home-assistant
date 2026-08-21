@@ -1,0 +1,9 @@
+---
+# Safe Mode: https://esphome.io/components/safe_mode/
+#
+safe_mode:
+  num_attempts: 5
+  reboot_timeout: 10min
+
+button:
+  - <<: !include ../buttons/safe_mode.yaml

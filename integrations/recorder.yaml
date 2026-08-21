@@ -1,0 +1,18 @@
+---
+# https://www.home-assistant.io/integrations/recorder/
+#
+recorder:
+  purge_keep_days: 7
+  auto_purge: false
+  exclude:
+    domains:
+      - media_player
+      - update
+      - uptime
+    entity_globs:
+      - sensor.sun_*
+    entities:
+      - binary_sensor.matter_offline_devices
+      - sensor.sun_color_temp_kelvin
+      - sensor.updates_available
+      - sun.sun

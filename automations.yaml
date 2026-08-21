@@ -1,0 +1,92 @@
+- id: '1787337813042'
+  alias: Let's encrypt - Renouvellement du certificat
+  description: ''
+  triggers:
+  - trigger: time
+    at: 01:08:00
+    weekday:
+    - mon
+    - tue
+    - wed
+    - thu
+    - fri
+    - sat
+    - sun
+  conditions: []
+  actions:
+  - action: hassio.app_start
+    metadata: {}
+    data:
+      app: core_letsencrypt
+  mode: single
+- id: '1787338074079'
+  alias: Recorder -  Purge
+  description: ''
+  triggers:
+  - trigger: time_pattern
+    minutes: '8'
+    id: purge
+  - trigger: time
+    at: 05:38:00
+    weekday:
+    - mon
+    - tue
+    - wed
+    - thu
+    - fri
+    - sat
+    - sun
+    id: purge_repack
+  conditions: []
+  actions:
+  - action: recorder.purge
+    metadata: {}
+    data:
+      repack: '{{ trigger.id == "purge_repack" }}'
+  mode: single
+- id: '1787338933113'
+  alias: Home assistant - Mises à jour disponibles
+  description: ''
+  triggers:
+  - trigger: homeassistant
+    event: start
+  - trigger: event
+    event_type: automation_reloaded
+  - trigger: state
+    entity_id:
+    - sensor.updates_available
+  conditions:
+  - condition: numeric_state
+    entity_id: sensor.updates_available
+    above: 0
+    enabled: true
+  actions:
+  - action: script.notification_management
+    data:
+      recipient: signal_system
+      title: "\U0001F195 Home Assistant - Mise(s) à jour disponible(s)"
+      message: "{% for update in state_attr('sensor.updates_available', 'updates')
+        -%}\n  {{ device_attr(update, 'name') }} : **{{ state_attr(update, 'installed_version')
+        }}** -> **{{ state_attr(update, 'latest_version') }}**\n{% endfor %}"
+  mode: single
+- id: '1787340155650'
+  alias: Home assistant - Échec de la sauvegarde
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - event.backup_automatic_backup
+  conditions:
+  - condition: state
+    entity_id: event.backup_automatic_backup
+    state:
+    - failed
+    attribute: event_type
+  actions:
+  - action: script.notification_management
+    data:
+      recipient: signal_system
+      title: "\U0001F6A8 Home Assistant - Échec de la sauvegarde automatique"
+      message: 'La dernière sauvegarde automatique a échoué en raison de : {{ state_attr("event.backup_automatic_backup",
+        "failed_reason") }}'
+  mode: single

@@ -1,0 +1,10 @@
+---
+substitutions:
+  slug: hoymiles
+  name: Hoymiles
+
+  api_encryption_key: !secret esphome_hoymiles_api_encryption_key
+  logger_level: DEBUG
+
+packages:
+  device: !include devices/hoymiles.yaml

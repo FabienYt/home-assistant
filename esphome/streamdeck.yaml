@@ -1,0 +1,11 @@
+---
+substitutions:
+  name: "streamdeck"
+  friendly_name: "Streamdeck"
+
+  device: "guition-esp32-p4-jc1060p470"
+
+  api_encryption_key: !secret esphome_streamdeck_api_encryption_key
+
+packages:
+  device: !include devices/espcontrol.yaml

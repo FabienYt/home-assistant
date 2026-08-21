@@ -1,0 +1,9 @@
+---
+# OTA Update Component: https://esphome.io/components/ota/esphome/
+#
+substitutions:
+  ota_password: !secret esphome_ota_password
+
+ota:
+  platform: esphome
+  password: "${ota_password}"

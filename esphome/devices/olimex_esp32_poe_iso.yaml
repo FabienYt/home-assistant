@@ -1,0 +1,22 @@
+---
+# https://www.olimex.com/Products/IoT/ESP32/ESP32-POE-ISO/open-source-hardware
+#
+packages:
+  <<: !include_dir_named ../common
+
+  board: !include ../boards/esp32_poe_iso.yaml
+
+ethernet:
+  type: LAN8720
+  mdc_pin: GPIO23
+  mdio_pin: GPIO18
+  clk:
+    pin: GPIO17
+    mode: CLK_OUT
+  phy_addr: 0
+  power_pin:
+    number: GPIO12
+    ignore_strapping_warning: true
+
+logger:
+  hardware_uart: UART1

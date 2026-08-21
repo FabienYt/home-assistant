@@ -1,0 +1,9 @@
+---
+# Native API Component: https://esphome.io/components/api/
+#
+api:
+  id: component_api
+
+  encryption:
+    key: "${api_encryption_key}"
+  reboot_timeout: 5min

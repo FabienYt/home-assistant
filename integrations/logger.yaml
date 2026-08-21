@@ -1,0 +1,11 @@
+---
+# https://www.home-assistant.io/integrations/logger/
+#
+logger:
+  default: warning
+
+  filters:
+    homeassistant.components.thread.dataset_store:
+      - "Got dataset with same extended PAN ID and same or older active timestamp"
+    homeassistant.loader:
+      - "We found a custom integration"

@@ -1,0 +1,72 @@
+# ============================================================
+# Home Assistant — dépôt public
+# Règle d'or : on ne versionne que ce qui est écrit à la main,
+# jamais ce que Home Assistant génère à l'exécution.
+# ============================================================
+
+# ---------- Secrets & clés ----------
+# Le secrets.yaml de la racine porte les vraies valeurs → jamais commité.
+**/secrets.yaml
+# Exception : esphome/secrets.yaml n'est qu'une redirection
+# `<<: !include ../secrets.yaml`, sans aucune valeur. Il doit être versionné,
+# sinon les builds ESPHome cassent à la restauration.
+!esphome/secrets.yaml
+.env
+*.pem
+*.key
+*.crt
+*.pfx
+*.p12
+*.bin
+.google.token
+
+# ---------- État interne HA (tokens, GPS, registres) ----------
+.storage/
+.cloud/
+.cache/
+.HA_VERSION
+.uuid
+.ha_run.lock
+home-assistant.log*
+ip_bans.yaml
+known_devices.yaml
+
+# ---------- Base de données ----------
+home-assistant_v2.db
+home-assistant_v2.db-*
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+
+# ---------- Runtime & dépendances ----------
+deps/
+tts/
+image/
+www/community/
+custom_components/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# ---------- Sauvegardes ----------
+backups/
+*.tar
+*.tar.gz
+*.zip
+
+# ---------- ESPHome ----------
+esphome/.esphome/
+esphome/.device-builder*
+esphome/.receiver_peers.json
+esphome/.offloader_pairings.json
+
+# ---------- Éditeurs & OS ----------
+.theia/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*~

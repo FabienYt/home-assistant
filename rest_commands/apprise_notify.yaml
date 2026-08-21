@@ -1,0 +1,11 @@
+---
+url: !secret apprise_url
+method: post
+username: !secret apprise_username
+password: !secret apprise_password
+content_type: "application/json"
+payload: >-
+  {"title": {{ title | tojson }},
+    "body": {{ message | tojson }},
+    "tag": {{ tag | tojson }},
+    "format": "markdown"}

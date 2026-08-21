@@ -1,0 +1,268 @@
+---
+substitutions:
+  logger_level: INFO
+
+  inverter1: Abris_bois
+
+packages:
+  <<: !include_dir_named ../common
+
+  wifi: !include ../components/wifi.yaml
+
+api:
+  batch_delay: 50ms
+
+esp32:
+  board: esp32dev
+  toolchain: platformio
+  framework:
+    type: arduino
+    advanced:
+      minimum_chip_revision: 3.1
+      sram1_as_iram: true
+
+esphome:
+  on_boot:
+    priority: -100
+    then:
+      - script.execute: ${inverter1}_rssi_watchdog
+
+globals:
+  - id: screen_offline_counter
+    type: uint16_t
+    restore_value: no
+    initial_value: '0'
+
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+  scan: true
+
+font:
+  - file:
+      type: gfonts
+      family: Roboto
+      weight: bold
+    id: font_power
+    size: 24
+  - file:
+      type: gfonts
+      family: Roboto
+      weight: medium
+    id: font_details
+    size: 12
+
+display:
+  - platform: ssd1306_i2c
+    model: "SH1106 128x64"
+    address: 0x3C
+    id: oled
+    rotation: 180°
+    lambda: |-
+      const bool online = id(${inverter1}_reachable).state;
+
+      if (online && id(${inverter1}_ac_power).has_state()) {
+        it.printf(64, 0, id(font_power), TextAlign::TOP_CENTER, "%.0f W", id(${inverter1}_ac_power).state);
+      } else {
+        it.print(64, 0, id(font_power), TextAlign::TOP_CENTER, "--- W");
+      }
+
+      if (std::isnan(id(${inverter1}_energy_today).state)) {
+        it.print(0, 30, id(font_details), TextAlign::TOP_LEFT, "Aujourd'hui : --- Wh");
+      } else {
+        it.printf(0, 30, id(font_details), TextAlign::TOP_LEFT, "Aujourd'hui : %.0f Wh", id(${inverter1}_energy_today).state);
+      }
+
+      if (online) {
+        if (std::isnan(id(${inverter1}_ac_voltage).state)) {
+          it.print(0, 48, id(font_details), TextAlign::TOP_LEFT, "--- V");
+        } else {
+          it.printf(0, 48, id(font_details), TextAlign::TOP_LEFT, "%.0f V", id(${inverter1}_ac_voltage).state);
+        }
+
+        if (std::isnan(id(${inverter1}_ac_current).state)) {
+          it.print(64, 48, id(font_details), TextAlign::TOP_CENTER, "--- A");
+        } else {
+          it.printf(64, 48, id(font_details), TextAlign::TOP_CENTER, "%.2f A", id(${inverter1}_ac_current).state);
+        }
+
+        const float pac = id(${inverter1}_ac_power).state;
+        const float pdc = id(${inverter1}_dc_power).state;
+        if (!std::isnan(pac) && !std::isnan(pdc) && pdc > 10.0f) {
+          const float eff = std::min(100.0f, std::max(0.0f, pac / pdc * 100.0f));
+          it.printf(127, 48, id(font_details), TextAlign::TOP_RIGHT, "%.0f %%", eff);
+        } else {
+          it.print(127, 48, id(font_details), TextAlign::TOP_RIGHT, "--- %");
+        }
+      } else {
+        it.print(64, 48, id(font_details), TextAlign::TOP_CENTER, "Onduleur hors ligne");
+      }
+
+interval:
+  - interval: 30s
+    then:
+      - lambda: |-
+          if (id(${inverter1}_reachable).state) {
+            if (id(screen_offline_counter) != 0) {
+              id(screen_offline_counter) = 0;
+              id(oled).turn_on();
+            }
+          } else if (id(screen_offline_counter) < 10) {
+            id(screen_offline_counter)++;
+            if (id(screen_offline_counter) == 10) {
+              id(oled).turn_off();
+            }
+          }
+
+external_components:
+  - source: github://SeByDocKy/myESPhome
+    components: [hms_inverter]
+    refresh: 0s
+
+hms_inverter:
+  id: hms_platform
+  update_interval: 10s
+  pins:
+    clk: GPIO18
+    cs: GPIO4
+    fcs:
+      number: GPIO5
+      ignore_strapping_warning: true
+    sdio: GPIO23
+    gpio2: GPIO19
+    gpio3: GPIO16
+  inverters:
+    - serial: "1164A00851B8"
+      full_power_startup: true
+
+      reachable:
+        id: ${inverter1}_reachable
+        name: ${inverter1} Reachable
+        on_press:
+          # Rallumage immédiat dès que l'onduleur revient (l'interval
+          # sert de filet de sécurité si ce front est manqué)
+          - globals.set:
+              id: screen_offline_counter
+              value: '0'
+          - lambda: 'id(oled).turn_on();'
+      rssi:
+        id: ${inverter1}_rssi
+        name: ${inverter1} RSSI
+        on_value:
+          - script.execute: ${inverter1}_rssi_watchdog
+      producing:
+        id: ${inverter1}_producing
+        name: ${inverter1} Producing
+      restart:
+        id: ${inverter1}_restart
+        name: ${inverter1} Restart
+      limit_percent:
+        id: ${inverter1}_limit_percent
+        name: ${inverter1} Limit Percent
+      limit_absolute:
+        id: ${inverter1}_limit_absolute
+        name: ${inverter1} Limit Absolute
+
+      dc_channels:
+        - power:
+            id: ${inverter1}_pv1_power
+            name: ${inverter1} PV1 Power
+          voltage:
+            id: ${inverter1}_pv1_voltage
+            name: ${inverter1} PV1 Voltage
+          current:
+            id: ${inverter1}_pv1_current
+            name: ${inverter1} PV1 Current
+          energy:
+            id: ${inverter1}_pv1_energy
+            name: ${inverter1} PV1 Energy
+        - power:
+            id: ${inverter1}_pv2_power
+            name: ${inverter1} PV2 Power
+          voltage:
+            id: ${inverter1}_pv2_voltage
+            name: ${inverter1} PV2 Voltage
+          current:
+            id: ${inverter1}_pv2_current
+            name: ${inverter1} PV2 Current
+          energy:
+            id: ${inverter1}_pv2_energy
+            name: ${inverter1} PV2 Energy
+        - power:
+            id: ${inverter1}_pv3_power
+            name: ${inverter1} PV3 Power
+          voltage:
+            id: ${inverter1}_pv3_voltage
+            name: ${inverter1} PV3 Voltage
+          current:
+            id: ${inverter1}_pv3_current
+            name: ${inverter1} PV3 Current
+          energy:
+            id: ${inverter1}_pv3_energy
+            name: ${inverter1} PV3 Energy
+        - power:
+            id: ${inverter1}_pv4_power
+            name: ${inverter1} PV4 Power
+          voltage:
+            id: ${inverter1}_pv4_voltage
+            name: ${inverter1} PV4 Voltage
+          current:
+            id: ${inverter1}_pv4_current
+            name: ${inverter1} PV4 Current
+          energy:
+            id: ${inverter1}_pv4_energy
+            name: ${inverter1} PV4 Energy
+
+      ac_channel:
+        power:
+          id: ${inverter1}_ac_power
+          name: ${inverter1} AC Power
+        voltage:
+          id: ${inverter1}_ac_voltage
+          name: ${inverter1} AC Voltage
+        current:
+          id: ${inverter1}_ac_current
+          name: ${inverter1} AC Current
+
+      inverter_channel:
+        power:
+          id: ${inverter1}_dc_power
+          name: ${inverter1} DC Power
+        energy:
+          id: ${inverter1}_dc_energy
+          name: ${inverter1} DC Energy Today
+          unit_of_measurement: "Wh"
+          device_class: energy
+          state_class: total_increasing
+          icon: mdi:counter
+        temperature:
+          id: ${inverter1}_temperature
+          name: ${inverter1} Temperature
+
+sensor:
+  - platform: total_daily_energy
+    id: ${inverter1}_energy_today
+    name: ${inverter1} Energy Today
+    power_id: ${inverter1}_ac_power
+    unit_of_measurement: "Wh"
+    device_class: energy
+    state_class: total_increasing
+    accuracy_decimals: 0
+    method: trapezoid
+
+script:
+  - id: ${inverter1}_rssi_watchdog
+    mode: restart
+    then:
+      - repeat:
+          count: 3
+          then:
+            - delay: 5min
+            - if:
+                condition:
+                  binary_sensor.is_on: ${inverter1}_reachable
+                then:
+                  - logger.log:
+                      level: WARN
+                      format: "RSSI silencieux depuis 5 min, redemarrage de l'onduleur"
+                  - button.press: ${inverter1}_restart
