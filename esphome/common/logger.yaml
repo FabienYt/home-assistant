@@ -1,0 +1,8 @@
+---
+# Logger Component: https://esphome.io/components/logger/
+#
+logger:
+  id: component_logger
+
+  baud_rate: 0
+  level: "${logger_level}"

@@ -1,0 +1,66 @@
+  alias: Gestion des notifications
+  description: >-
+    Envoie via apprise (VIP) avec 3 tentatives espacées de 10 s ;
+    en dernier recours, notification persistante dans l'UI.
+
+  fields:
+    title:
+      selector:
+        text:
+      name: Titre
+      required: true
+      description: Titre de la notification
+    message:
+      selector:
+        text:
+          multiline: true
+      name: Message
+      description: Contenu du message
+      required: true
+    recipient:
+      selector:
+        select:
+          options:
+            - signal_system
+            - signal_house
+            - signal_backup
+            - telegram
+      default: signal_system
+      name: Canal
+      description: Tag apprise cible
+
+  mode: parallel
+  max: 50
+
+  sequence:
+    - variables:
+        tag: "{{ recipient | default('signal_system') }}"
+    - repeat:
+        count: 3
+        sequence:
+          - action: rest_command.apprise_notify
+            continue_on_error: true
+            response_variable: resp
+            data:
+              title: "{{ title }}"
+              message: "{{ message }}"
+              tag: "{{ tag }}"
+          - if:
+              - condition: template
+                value_template: "{{ resp is defined and resp.status is defined and resp.status == 200 }}"
+            then:
+              - stop: Notification délivrée par apprise
+          - if:
+              - condition: template
+                value_template: "{{ repeat.index < 3 }}"
+            then:
+              - delay: "00:00:10"
+    - action: persistent_notification.create
+      data:
+        title: Apprise KO
+        message: >-
+          Échec de l'envoi d'un message vers apprise (tag `{{ tag }}`).
+
+          **Titre** : {{ title }}
+
+          **Message** : {{ message }}

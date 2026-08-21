@@ -1,0 +1,5 @@
+---
+# Uptime Sensor: https://esphome.io/components/sensor/uptime/
+#
+platform: uptime
+id: sensor_uptime

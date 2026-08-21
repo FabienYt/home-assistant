@@ -1,0 +1,6 @@
+---
+esp32:
+  board: esp32-poe-iso
+  framework:
+    type: esp-idf
+    version: recommended

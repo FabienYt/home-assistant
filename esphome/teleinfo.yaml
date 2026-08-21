@@ -1,0 +1,102 @@
+---
+substitutions:
+  slug: teleinfo
+  name: Teleinfo
+
+  api_encryption_key: !secret esphome_teleinfo_api_encryption_key
+  logger_level: DEBUG
+
+packages:
+  device: !include devices/olimex_esp32_poe_iso.yaml
+
+teleinfo:
+  id: teleinfo_main
+  update_interval: 5s
+  historical_mode: true # false en mode standard
+
+uart:
+  id: uart_bus
+  rx_pin: GPIO36
+  baud_rate: 1200 # 9600 en mode standard
+  parity: EVEN
+  data_bits: 7
+  stop_bits: 1
+  rx_buffer_size: 2048
+
+sensor:
+  # Index
+  - platform: teleinfo
+    tag_name: "HCHP"
+    name: "Index - Heures pleines"
+    icon: mdi:gauge
+    id: peak_hours
+    unit_of_measurement: Wh
+    device_class: "energy"
+    state_class: "total_increasing"
+    teleinfo_id: teleinfo_main
+    filters:
+      - filter_out: 0
+      - lambda: |-
+          float MAX_DIFFERENCE = 10000.0;
+          static float last_value = NAN;
+          if (isnan(last_value) || std::abs(x - last_value) < MAX_DIFFERENCE)
+            return last_value = x;
+          else
+            return {};
+      - quantile:
+          window_size: 4
+
+  - platform: teleinfo
+    tag_name: "HCHC"
+    name: "Index - Heures creuses"
+    icon: mdi:gauge
+    id: offpeak_hours
+    unit_of_measurement: Wh
+    device_class: "energy"
+    state_class: "total_increasing"
+    teleinfo_id: teleinfo_main
+    filters:
+      - filter_out: 0
+      - lambda: |-
+          float MAX_DIFFERENCE = 10000.0;
+          static float last_value = NAN;
+          if (isnan(last_value) || std::abs(x - last_value) < MAX_DIFFERENCE)
+            return last_value = x;
+          else
+            return {};
+      - quantile:
+          window_size: 4
+
+  # Others
+  - platform: teleinfo
+    tag_name: "PAPP"
+    name: "Puissance apparente"
+    icon: mdi:flash
+    id: apparent_power
+    state_class: "measurement"
+    teleinfo_id: teleinfo_main
+    unit_of_measurement: VA
+
+  - platform: teleinfo
+    tag_name: "IINST"
+    name: "Intensité"
+    icon: mdi:current-ac
+    id: current
+    device_class: "current"
+    state_class: "measurement"
+    teleinfo_id: teleinfo_main
+    unit_of_measurement: A
+
+text_sensor:
+  - platform: teleinfo
+    tag_name: "PTEC"
+    name: "Période Tarifaire en cours"
+    icon: mdi:information
+    teleinfo_id: teleinfo_main
+    filters:
+      - lambda: |-
+          if (x.length() >= 2) {
+            return x.substr(0, 2);
+          } else {
+            return x;
+          }
