@@ -62,6 +62,12 @@ esphome/.device-builder*
 esphome/.receiver_peers.json
 esphome/.offloader_pairings.json
 
+# ---------- Zigbee2MQTT ----------
+# Répertoire de données de l'addon, intégralement généré à l'exécution :
+# configuration.yaml (mot de passe MQTT + network_key), coordinator_backup.json
+# (clé réseau en clair), database.db et les journaux. Rien n'est versionné.
+zigbee2mqtt/
+
 # ---------- Éditeurs & OS ----------
 .theia/
 .vscode/
