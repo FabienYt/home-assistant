@@ -1,0 +1,11 @@
+---
+binary_sensor:
+  - default_entity_id: binary_sensor.ev_charging
+    name: VE en charge
+    unique_id: 'f26b1bf2-445d-4365-8132-de5339e02837'
+
+    device_class: battery_charging
+
+    state: '{{ states("sensor.cellier_interrupteur_chargeur_des_ve_power") | float(0) > 50 }}'
+
+    availability: '{{ has_value("sensor.cellier_interrupteur_chargeur_des_ve_power") }}'
