@@ -1,0 +1,17 @@
+---
+sensor:
+  name: Add-ons hors ligne
+  unique_id: 'c93f4f9f-96b7-44c8-806e-fd759dc4530d'
+
+  # Nombre d'add-ons arrêtés depuis plus d'une minute, et leur liste en
+  # attributs. Source directe de l'API Supervisor : les binary_sensor
+  # « en cours d'exécution » de l'intégration Supervisor sont mis en cache
+  # et accusent plusieurs minutes de retard, inexploitables pour alerter.
+  command: /config/supervisor-addons-offline.sh
+  command_timeout: 15
+  scan_interval: 30
+
+  value_template: '{{ value_json.count }}'
+  json_attributes:
+    - addons
+    - names
