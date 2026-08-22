@@ -153,3 +153,93 @@
             }}** est de nouveau opérationnel.'
   mode: parallel
   max: 10
+- id: '1768732528389'
+  alias: Gestion de la charge des VE
+  description: ''
+  triggers:
+  - trigger: homeassistant
+    event: start
+    id: refresh
+  - trigger: event
+    event_type: automation_reloaded
+    id: refresh
+  - trigger: time_pattern
+    minutes: /15
+    id: refresh
+  - trigger: state
+    entity_id:
+    - sensor.jardin_teleinfo_periode_tarifaire_en_cours
+    id: tariff
+  - trigger: state
+    entity_id:
+    - input_boolean.ev_forced_charge
+    id: forced
+  - trigger: state
+    entity_id:
+    - input_boolean.ev_forced_charge
+    to: 'on'
+    for: '00:05:00'
+    id: forced_timeout
+  - trigger: state
+    entity_id:
+    - binary_sensor.ev_charging
+    to: 'off'
+    for: '00:05:00'
+    id: forced_timeout
+  - trigger: state
+    entity_id:
+    - switch.cellier_interrupteur_chargeur_des_ve
+    id: switch
+  conditions: []
+  actions:
+  - choose:
+    - alias: Désactivation de la charge forcée des VE
+      conditions:
+      - condition: state
+        entity_id: input_boolean.ev_forced_charge
+        state: 'on'
+        for: '00:05:00'
+      - condition: state
+        entity_id: binary_sensor.ev_charging
+        state: 'off'
+        for: '00:05:00'
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.ev_forced_charge
+    - alias: Démarrage de la charge des VE
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.id != ''switch'' }}'
+      - condition: state
+        entity_id: switch.cellier_interrupteur_chargeur_des_ve
+        state: 'off'
+      - condition: or
+        conditions:
+        - condition: state
+          entity_id: input_boolean.ev_forced_charge
+          state: 'on'
+        - condition: state
+          entity_id: sensor.jardin_teleinfo_periode_tarifaire_en_cours
+          state: HC
+      sequence:
+      - action: switch.turn_on
+        target:
+          entity_id: switch.cellier_interrupteur_chargeur_des_ve
+    - alias: Arrêt de la charge des VE
+      conditions:
+      - condition: state
+        entity_id: switch.cellier_interrupteur_chargeur_des_ve
+        state: 'on'
+      - condition: state
+        entity_id: input_boolean.ev_forced_charge
+        state: 'off'
+      - condition: state
+        entity_id: sensor.jardin_teleinfo_periode_tarifaire_en_cours
+        state: HP
+      sequence:
+      - action: switch.turn_off
+        target:
+          entity_id: switch.cellier_interrupteur_chargeur_des_ve
+  mode: queued
+  max: 10
