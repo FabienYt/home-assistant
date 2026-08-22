@@ -1,0 +1,98 @@
+---
+id: daily_summary
+alias: Résumé quotidien
+description: ''
+
+triggers:
+  - trigger: time
+    at: "00:01:00"
+
+conditions: []
+
+variables:
+  weather_entity: !secret meteo_france_weather_entity
+  alert_entity: !secret meteo_france_alert_entity
+  energy_entity: sensor.energy_yesterday
+  solar_forecast_entity: sensor.energy_production_today
+  solar_peak_entity: sensor.power_highest_peak_time_today
+
+  conditions_fr:
+    clear-night: 🌙 Nuit claire
+    cloudy: ☁️ Nuageux
+    exceptional: ⚠️ Conditions exceptionnelles
+    fog: 🌫️ Brouillard
+    hail: 🧊 Grêle
+    lightning: 🌩️ Orages
+    lightning-rainy: ⛈️ Orages et pluie
+    partlycloudy: 🌤️ Partiellement nuageux
+    pouring: 🌧️ Fortes pluies
+    rainy: 🌦️ Pluie
+    snowy: ❄️ Neige
+    snowy-rainy: 🌨️ Pluie et neige
+    sunny: ☀️ Ensoleillé
+    windy: 🌬️ Venteux
+    windy-variant: 🌬️ Venteux
+
+  alert_colors:
+    Jaune: 🟡
+    Orange: 🟠
+    Rouge: 🔴
+
+  days_fr:
+    [Lundi, Mardi, Mercredi, Jeudi, Vendredi, Samedi, Dimanche]
+  months_fr:
+    [janvier, février, mars, avril, mai, juin, juillet, août, septembre,
+     octobre, novembre, décembre]
+
+actions:
+  - action: homeassistant.update_entity
+    target:
+      entity_id: "{{ energy_entity }}"
+
+  - action: weather.get_forecasts
+    target:
+      entity_id: "{{ weather_entity }}"
+    data:
+      type: daily
+    response_variable: forecasts
+
+  - variables:
+      day: >-
+        {{ forecasts[weather_entity].forecast
+           | selectattr('datetime', 'search', now().strftime('%Y-%m-%d'))
+           | list | first | default(forecasts[weather_entity].forecast[0]) }}
+
+  - action: script.notification_management
+    data:
+      recipient: signal_house
+      title: 📅 Résumé du jour
+      message: |-
+        {%- macro nb(value, decimals=1) %}{{ value | float(0) | round(decimals) | string | replace('.', ',') }}{% endmacro -%}
+        {%- macro hm(value) %}{% set ts = value | as_timestamp(none) %}{{ ts | timestamp_custom('%Hh%M') if ts else '-' }}{% endmacro -%}
+        {%- set alert = states(alert_entity) | replace('unknown', 'inconnue') | replace('unavailable', 'indisponible') -%}
+        {%- set alert_state = expand(alert_entity) | first | default(none) -%}
+        {%- set attrs = alert_state.attributes if alert_state else {} -%}
+        {%- set ns = namespace(risks=[]) -%}
+        {%- for risk, level in attrs.items() if level is string and level in alert_colors -%}
+          {%- set ns.risks = ns.risks + [risk] -%}
+        {%- endfor -%}
+        {{ '​' }}
+        {{ days_fr[now().weekday()] }} {{ now().day }} {{ months_fr[now().month - 1] }}
+        {{ '​' }}
+        {{ conditions_fr[day.condition] | default('🌡️ ' ~ day.condition | default('inconnu'), true) }}
+        🌡️ {{ day.templow | default(0, true) | round(0) | int }} → {{ day.temperature | default(0, true) | round(0) | int }} °C
+        💧 Pluie {{ day.precipitation_probability | default(0, true) | round(0) | int }} % ({{ nb(day.precipitation) }} mm)
+        💨 Vent {{ day.wind_speed | default(0, true) | round(0) | int }} km/h
+        🌅 {{ hm(state_attr('sun.sun', 'next_rising')) }} · 🌇 {{ hm(state_attr('sun.sun', 'next_setting')) }}
+        {{ '🟢' if alert == 'Vert' else alert_colors[alert] | default('⚪', true) }} Vigilance {{ alert | lower }}{{ ' : ' ~ ns.risks | join(', ') if ns.risks else '' }}
+
+        🔆 Solaire
+        ⚡ Hier : {{ nb(state_attr(energy_entity, 'solar_kwh')) }} kWh produits
+        🔮 Aujourd'hui : {{ nb(states(solar_forecast_entity)) }} kWh estimés (pic vers {{ hm(states(solar_peak_entity)) }})
+
+        🏠 Consommation d'hier
+        🔌 {{ nb(states(energy_entity)) }} kWh au total
+        🌙 Heures creuses : {{ nb(state_attr(energy_entity, 'offpeak_kwh')) }} kWh
+        🌞 Heures pleines : {{ nb(state_attr(energy_entity, 'peak_kwh')) }} kWh
+
+mode: single
