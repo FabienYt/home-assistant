@@ -25,6 +25,7 @@ integrations/                   Une intégration par fichier (packages HA)
 entities/                       Entités écrites à la main, une par fichier
 ├── command_line/               Capteurs alimentés par un script shell
 ├── input_booleans/             Interrupteurs virtuels
+├── sql/                        Capteurs issus d'une requête sur la base du recorder
 └── templates/                  Capteurs et binary_sensors calculés
 automations.yaml                Automatisations gérées depuis l'interface
 automations/                    Automatisations écrites à la main

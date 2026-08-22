@@ -1,0 +1,28 @@
+---
+name: Énergie de la veille
+unique_id: '7af7c54f-6c7b-4ff9-8afc-a2d6a7dbc30b'
+
+query: >-
+  SELECT
+    ROUND((MAX(CASE WHEN m.statistic_id = 'sensor.jardin_teleinfo_index_heures_creuses' THEN s.sum END)
+         - MIN(CASE WHEN m.statistic_id = 'sensor.jardin_teleinfo_index_heures_creuses' THEN s.sum END)
+         + MAX(CASE WHEN m.statistic_id = 'sensor.jardin_teleinfo_index_heures_pleines' THEN s.sum END)
+         - MIN(CASE WHEN m.statistic_id = 'sensor.jardin_teleinfo_index_heures_pleines' THEN s.sum END)) / 1000.0, 2) AS grid_kwh,
+    ROUND((MAX(CASE WHEN m.statistic_id = 'sensor.jardin_teleinfo_index_heures_creuses' THEN s.sum END)
+         - MIN(CASE WHEN m.statistic_id = 'sensor.jardin_teleinfo_index_heures_creuses' THEN s.sum END)) / 1000.0, 2) AS offpeak_kwh,
+    ROUND((MAX(CASE WHEN m.statistic_id = 'sensor.jardin_teleinfo_index_heures_pleines' THEN s.sum END)
+         - MIN(CASE WHEN m.statistic_id = 'sensor.jardin_teleinfo_index_heures_pleines' THEN s.sum END)) / 1000.0, 2) AS peak_kwh,
+    ROUND((MAX(CASE WHEN m.statistic_id = 'sensor.salon_hoymiles_abris_bois_energy_today' THEN s.sum END)
+         - MIN(CASE WHEN m.statistic_id = 'sensor.salon_hoymiles_abris_bois_energy_today' THEN s.sum END)) / 1000.0, 2) AS solar_kwh
+  FROM statistics s
+  JOIN statistics_meta m ON m.id = s.metadata_id
+  WHERE m.statistic_id IN (
+          'sensor.jardin_teleinfo_index_heures_creuses',
+          'sensor.jardin_teleinfo_index_heures_pleines',
+          'sensor.salon_hoymiles_abris_bois_energy_today')
+    AND s.start_ts >= strftime('%s', date('now', 'localtime', '-1 day'), 'utc') - 3600
+    AND s.start_ts <  strftime('%s', date('now', 'localtime'), 'utc');
+
+column: grid_kwh
+unit_of_measurement: kWh
+device_class: energy
