@@ -73,6 +73,7 @@ sensor:
     name: "Puissance apparente"
     icon: mdi:flash
     id: apparent_power
+    device_class: "apparent_power"
     state_class: "measurement"
     teleinfo_id: teleinfo_main
     unit_of_measurement: VA
