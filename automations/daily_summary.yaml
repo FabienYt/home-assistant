@@ -76,7 +76,6 @@ actions:
         {%- for risk, level in attrs.items() if level is string and level in alert_colors -%}
           {%- set ns.risks = ns.risks + [risk] -%}
         {%- endfor -%}
-        {{ '​' }}
         {{ days_fr[now().weekday()] }} {{ now().day }} {{ months_fr[now().month - 1] }}
         {{ '​' }}
         {{ conditions_fr[day.condition] | default('🌡️ ' ~ day.condition | default('inconnu'), true) }}
