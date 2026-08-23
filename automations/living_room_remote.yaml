@@ -1,0 +1,88 @@
+---
+id: living_room_remote
+alias: Salon - Télécommande
+description: ''
+
+triggers:
+  - trigger: state
+    entity_id: event.salon_telecommande_blanche_a_molette_bilresa_bouton_1
+    not_to:
+      - unavailable
+      - unknown
+    id: wheel_up
+  - trigger: state
+    entity_id: event.salon_telecommande_blanche_a_molette_bilresa_bouton_2
+    not_to:
+      - unavailable
+      - unknown
+    id: wheel_down
+  - trigger: state
+    entity_id: event.salon_telecommande_blanche_a_molette_bilresa_bouton_3
+    not_to:
+      - unavailable
+      - unknown
+    id: button
+
+conditions: []
+
+variables:
+  event_type: '{{ trigger.to_state.attributes.event_type }}'
+  notches: '{{ event_type | replace("multi_press_", "") | int(0) }}'
+  brightness: >-
+    {{ state_attr('light.salon_ampoule_led_e27_1521_lumen_kajplats', 'brightness') | int(0) }}
+
+actions:
+  - choose:
+      - alias: Bascule de l'ampoule du salon
+        conditions:
+          - condition: trigger
+            id: button
+          - condition: template
+            value_template: '{{ event_type == "multi_press_1" }}'
+        sequence:
+          - action: light.toggle
+            target:
+              entity_id: light.salon_ampoule_led_e27_1521_lumen_kajplats
+            data:
+              brightness_pct: 50
+
+      - alias: Ampoule du salon à pleine luminosité
+        conditions:
+          - condition: trigger
+            id: button
+          - condition: template
+            value_template: '{{ event_type == "multi_press_2" }}'
+        sequence:
+          - action: light.turn_on
+            target:
+              entity_id: light.salon_ampoule_led_e27_1521_lumen_kajplats
+            data:
+              brightness_pct: 100
+
+      - alias: Augmentation de la luminosité du salon
+        conditions:
+          - condition: trigger
+            id: wheel_up
+        sequence:
+          - action: light.turn_on
+            target:
+              entity_id: light.salon_ampoule_led_e27_1521_lumen_kajplats
+            data:
+              brightness: '{{ min(brightness + notches * 25, 255) }}'
+
+      - alias: Diminution de la luminosité du salon
+        conditions:
+          - condition: trigger
+            id: wheel_down
+          - condition: state
+            entity_id: light.salon_ampoule_led_e27_1521_lumen_kajplats
+            state: 'on'
+        sequence:
+          - action: light.turn_on
+            target:
+              entity_id: light.salon_ampoule_led_e27_1521_lumen_kajplats
+            data:
+              brightness: '{{ max(brightness - notches * 25, 3) }}'
+
+mode: queued
+max: 10
