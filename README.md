@@ -57,6 +57,11 @@ envoie le message via [Apprise](https://github.com/caronc/apprise), réessaie tr
 si Apprise fait toujours la sourde oreille. La domotique a le droit de tomber en panne,
 pas de le garder pour elle.
 
+Les alertes de sécurité — fuite d'eau, monoxyde de carbone et fumée — sont gérées par
+[`automations/safety_alerts.yaml`](automations/safety_alerts.yaml) : notification sur le
+canal du foyer et sirène du détecteur de fumée de l'entrée, coupée au retour à la
+normale ou au bout de cinq minutes.
+
 ## ESPHome
 
 Chaque appareil a un fichier d'entrée à la racine de `esphome/`, réduit à ses
