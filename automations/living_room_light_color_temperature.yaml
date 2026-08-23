@@ -1,0 +1,44 @@
+---
+id: living_room_light_color_temperature
+alias: Salon - Température de la lumière
+description: ''
+
+triggers:
+  - trigger: homeassistant
+    event: start
+    id: refresh
+  - trigger: event
+    event_type: automation_reloaded
+    id: refresh
+  - trigger: state
+    entity_id: sensor.sun_color_temp_kelvin
+    id: refresh
+  - trigger: state
+    entity_id: light.salon_ampoule_led_e27_1521_lumen_kajplats
+    to: 'on'
+    id: light_on
+
+variables:
+  target: >-
+    {{ min(max(states('sensor.sun_color_temp_kelvin') | int(0),
+               state_attr('light.salon_ampoule_led_e27_1521_lumen_kajplats', 'min_color_temp_kelvin') | int(2202)),
+           state_attr('light.salon_ampoule_led_e27_1521_lumen_kajplats', 'max_color_temp_kelvin') | int(6535)) }}
+  current: >-
+    {{ state_attr('light.salon_ampoule_led_e27_1521_lumen_kajplats', 'color_temp_kelvin') | int(0) }}
+
+conditions:
+  - condition: state
+    entity_id: light.salon_ampoule_led_e27_1521_lumen_kajplats
+    state: 'on'
+  - condition: template
+    value_template: '{{ trigger.id == "light_on" or (target - current) | abs > 20 }}'
+
+actions:
+  - action: light.turn_on
+    target:
+      entity_id: light.salon_ampoule_led_e27_1521_lumen_kajplats
+    data:
+      color_temp_kelvin: '{{ target }}'
+      transition: '{{ 0 if trigger.id == "light_on" else 5 }}'
+
+mode: single
