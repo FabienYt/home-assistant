@@ -1,0 +1,30 @@
+---
+sensor:
+  - default_entity_id: sensor.matter_offline_devices
+    name: Matter - Appareils hors ligne
+    unique_id: 'da9b1b52-a064-45d8-bb93-079e27425934'
+
+    state: >-
+      {{ expand(integration_entities('matter'))
+         | rejectattr('domain', 'eq', 'update')
+         | selectattr('state', 'eq', 'unavailable')
+         | map(attribute='entity_id')
+         | map('device_id')
+         | reject('none')
+         | unique
+         | list
+         | count }}
+
+    attributes:
+      devices: >-
+        {{ expand(integration_entities('matter'))
+           | rejectattr('domain', 'eq', 'update')
+           | selectattr('state', 'eq', 'unavailable')
+           | map(attribute='entity_id')
+           | map('device_id')
+           | reject('none')
+           | unique
+           | list
+           | sort }}
+
+    availability: '{{ integration_entities("matter") | count > 0 }}'
