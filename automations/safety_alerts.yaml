@@ -1,0 +1,99 @@
+---
+id: safety_alerts
+alias: Sécurité - Fuite d'eau, monoxyde de carbone et fumée
+description: ''
+
+triggers:
+  - trigger: state
+    entity_id: &safety_sensors
+      - binary_sensor.cellier_capteur_de_fuites_d_eau_klippbok_fuite_d_eau
+      - binary_sensor.cellier_capteur_de_monoxyde_de_carbone_heiman_monoxyde_de_carbone
+      - binary_sensor.entree_detecteur_de_fumee_heiman_fumee
+    to: 'on'
+    id: alert
+  - trigger: state
+    entity_id: *safety_sensors
+    to: 'on'
+    for: '00:05:00'
+    id: timeout
+  - trigger: state
+    entity_id: *safety_sensors
+    from: 'on'
+    to: 'off'
+    id: clear
+
+variables:
+  monitored: *safety_sensors
+  device_icons:
+    moisture: 💧
+    carbon_monoxide: ⚠️
+    smoke: 🔥
+  area: '{{ area_name(trigger.entity_id) }}'
+  label: >-
+    {{ device_icons[trigger.to_state.attributes.device_class] | default('🚨', true) }}
+    **{{ trigger.to_state.attributes.friendly_name or trigger.entity_id }}**{{
+      ' *(' ~ area ~ ')*' if area else '' }}
+  others_active: >-
+    {{ expand(monitored)
+       | rejectattr('entity_id', 'eq', trigger.entity_id)
+       | selectattr('state', 'eq', 'on') | list | count > 0 }}
+
+actions:
+  - choose:
+      - alias: Capteur en alerte
+        conditions:
+          - condition: trigger
+            id: alert
+        sequence:
+          - action: script.notification_management
+            data:
+              recipient: signal_house
+              title: 🚨 Sécurité - Alerte en cours
+              message: '{{ label }}'
+
+          - action: siren.turn_on
+            continue_on_error: true
+            target:
+              entity_id: siren.entree_detecteur_de_fumee_heiman_sirene
+
+      - alias: Capteur toujours actif après 5 minutes
+        conditions:
+          - condition: trigger
+            id: timeout
+        sequence:
+          - action: siren.turn_off
+            continue_on_error: true
+            target:
+              entity_id: siren.entree_detecteur_de_fumee_heiman_sirene
+
+          - action: script.notification_management
+            data:
+              recipient: signal_house
+              title: ⚠️ Sécurité - Alerte toujours en cours
+              message: |-
+                {{ label }}
+
+                Le capteur est actif depuis 5 minutes ; la sirène est coupée.
+
+      - alias: Retour à la normale
+        conditions:
+          - condition: trigger
+            id: clear
+        sequence:
+          - if:
+              - condition: template
+                value_template: '{{ not others_active }}'
+            then:
+              - action: siren.turn_off
+                continue_on_error: true
+                target:
+                  entity_id: siren.entree_detecteur_de_fumee_heiman_sirene
+
+          - action: script.notification_management
+            data:
+              recipient: signal_house
+              title: ✅ Sécurité - Retour à la normale
+              message: '{{ label }}'
+
+mode: queued
+max: 10
