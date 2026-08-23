@@ -8,7 +8,7 @@ sensor:
 
     state: >-
       {% set elevation = min(max(state_attr('sun.sun', 'elevation') | float(0), 0), 90) %}
-      {% set kelvin = 4791.67 - 3290.66 / (1 + 0.222 * elevation ** 0.81) %}
+      {% set kelvin = 7088.41 - 5588.41 / (1 + 0.222 * elevation ** 0.81) %}
       {{ ((kelvin / 50) | round * 50) | int }}
 
     availability: '{{ state_attr("sun.sun", "elevation") is not none }}'
