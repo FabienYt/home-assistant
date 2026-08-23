@@ -1,0 +1,27 @@
+---
+id: backup_failed
+alias: Home assistant - Échec de la sauvegarde
+description: ''
+
+triggers:
+  - trigger: state
+    entity_id:
+      - event.backup_automatic_backup
+
+conditions:
+  - condition: state
+    entity_id: event.backup_automatic_backup
+    state:
+      - failed
+    attribute: event_type
+
+actions:
+  - action: script.notification_management
+    data:
+      recipient: signal_system
+      title: 🚨 Home Assistant - Échec de la sauvegarde automatique
+      message: >-
+        La dernière sauvegarde automatique a échoué en raison de :
+        {{ state_attr("event.backup_automatic_backup", "failed_reason") }}
+
+mode: single

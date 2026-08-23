@@ -1,0 +1,17 @@
+---
+id: letsencrypt_certificate_renewal
+alias: Let's encrypt - Renouvellement du certificat
+description: ''
+
+triggers:
+  - trigger: time
+    at: "01:08:00"
+
+conditions: []
+
+actions:
+  - action: hassio.app_start
+    data:
+      app: core_letsencrypt
+
+mode: single

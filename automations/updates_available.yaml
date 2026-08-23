@@ -1,0 +1,30 @@
+---
+id: updates_available
+alias: Home assistant - Mises à jour disponibles
+description: ''
+
+triggers:
+  - trigger: homeassistant
+    event: start
+  - trigger: event
+    event_type: automation_reloaded
+  - trigger: state
+    entity_id:
+      - sensor.updates_available
+
+conditions:
+  - condition: numeric_state
+    entity_id: sensor.updates_available
+    above: 0
+
+actions:
+  - action: script.notification_management
+    data:
+      recipient: signal_system
+      title: 🆕 Home Assistant - Mise(s) à jour disponible(s)
+      message: |-
+        {% for update in state_attr('sensor.updates_available', 'updates') -%}
+          {{ device_attr(update, 'name') }} : **{{ state_attr(update, 'installed_version') }}** -> **{{ state_attr(update, 'latest_version') }}**
+        {% endfor %}
+
+mode: single
