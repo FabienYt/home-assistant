@@ -34,8 +34,11 @@ scenes.yaml                     Scènes
 rest_commands/                  Appels HTTP sortants
 blueprints/                     Blueprints d'automatisations, scripts et templates
 esphome/                        Firmwares des appareils (voir plus bas)
-lldap-ha-auth.sh                Authentification des utilisateurs via LLDAP
-supervisor-addons-offline.sh    Add-ons arrêtés, vus depuis l'API Supervisor
+bin/                            Scripts shell appelés par la configuration
+├── lldap-ha-auth.sh            Authentification des utilisateurs via LLDAP
+├── supervisor-addons-offline.sh Add-ons arrêtés, vus depuis l'API Supervisor
+└── supervisor-letsencrypt-state.sh
+                                État de l'add-on Let's Encrypt, vu depuis l'API Supervisor
 ```
 
 `configuration.yaml` ne sert qu'à amorcer le système : il déclare

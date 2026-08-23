@@ -14,4 +14,16 @@ actions:
     data:
       app: core_letsencrypt
 
+  - wait_template: "{{ states('sensor.let_s_encrypt_etat') == 'started' }}"
+    timeout: '00:00:30'
+    continue_on_timeout: true
+
+  - wait_template: "{{ states('sensor.let_s_encrypt_etat') != 'started' }}"
+    timeout: '00:03:00'
+    continue_on_timeout: true
+
+  - action: hassio.app_restart
+    data:
+      app: core_nginx_proxy
+
 mode: single
