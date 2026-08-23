@@ -12,7 +12,7 @@ recorder:
     entity_globs:
       - sensor.sun_*
     entities:
-      - binary_sensor.matter_offline_devices
+      - sensor.matter_offline_devices
       - sensor.sun_color_temp_kelvin
       - sensor.updates_available
       - sun.sun
