@@ -1,0 +1,21 @@
+---
+id: recorder_purge
+alias: Recorder -  Purge
+description: ''
+
+triggers:
+  - trigger: time_pattern
+    minutes: '8'
+    id: purge
+  - trigger: time
+    at: "05:38:00"
+    id: purge_repack
+
+conditions: []
+
+actions:
+  - action: recorder.purge
+    data:
+      repack: '{{ trigger.id == "purge_repack" }}'
+
+mode: single
