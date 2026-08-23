@@ -4,8 +4,11 @@ method: post
 username: !secret apprise_username
 password: !secret apprise_password
 content_type: "application/json"
+# Le body commence par un espace de largeur nulle (U+200B) puis un saut de
+# ligne pour le séparer visuellement du titre : apprise-api passe le body dans
+# un CharField Django qui supprime les blancs en tête, mais pas l'U+200B.
 payload: >-
   {"title": {{ title | tojson }},
-    "body": {{ message | tojson }},
+    "body": {{ ("\u200b\n" ~ message) | tojson }},
     "tag": {{ tag | tojson }},
     "format": "markdown"}
