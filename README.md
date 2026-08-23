@@ -1,6 +1,5 @@
 # Configuration Home Assistant
 
-[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.8.3-41BDF5?logo=home-assistant&logoColor=white)](https://www.home-assistant.io)
 [![Licence MIT](https://img.shields.io/badge/Licence-MIT-blue)](LICENSE.md)
 
 ## À propos
