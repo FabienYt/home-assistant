@@ -1,0 +1,10 @@
+---
+sensor:
+  name: Let's Encrypt - État
+  unique_id: '7b751681-bbe0-4c11-58f0-8d14b7714a39'
+
+  command: /config/bin/supervisor-letsencrypt-state.sh
+  command_timeout: 15
+  scan_interval: 30
+
+  value_template: '{{ value_json.state }}'

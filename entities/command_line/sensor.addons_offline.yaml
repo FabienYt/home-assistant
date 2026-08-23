@@ -7,7 +7,7 @@ sensor:
   # attributs. Source directe de l'API Supervisor : les binary_sensor
   # « en cours d'exécution » de l'intégration Supervisor sont mis en cache
   # et accusent plusieurs minutes de retard, inexploitables pour alerter.
-  command: /config/supervisor-addons-offline.sh
+  command: /config/bin/supervisor-addons-offline.sh
   command_timeout: 15
   scan_interval: 30
 
