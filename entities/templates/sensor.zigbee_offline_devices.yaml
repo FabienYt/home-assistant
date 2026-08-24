@@ -1,0 +1,40 @@
+---
+sensor:
+  - default_entity_id: sensor.zigbee_offline_devices
+    name: Zigbee - Appareils hors ligne
+    unique_id: '28c7d178-9755-41a0-925c-1c232b5099de'
+
+    state: >-
+      {%- set ns = namespace(devices=[]) -%}
+      {%- for d in expand(integration_entities('mqtt'))
+                    | rejectattr('domain', 'eq', 'update')
+                    | selectattr('state', 'eq', 'unavailable')
+                    | map(attribute='entity_id')
+                    | map('device_id')
+                    | reject('none')
+                    | unique
+                    | list -%}
+        {%- if device_attr(d, 'via_device_id') is not none -%}
+          {%- set ns.devices = ns.devices + [d] -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {{ ns.devices | count }}
+
+    attributes:
+      devices: >-
+        {%- set ns = namespace(devices=[]) -%}
+        {%- for d in expand(integration_entities('mqtt'))
+                      | rejectattr('domain', 'eq', 'update')
+                      | selectattr('state', 'eq', 'unavailable')
+                      | map(attribute='entity_id')
+                      | map('device_id')
+                      | reject('none')
+                      | unique
+                      | list -%}
+          {%- if device_attr(d, 'via_device_id') is not none -%}
+            {%- set ns.devices = ns.devices + [d] -%}
+          {%- endif -%}
+        {%- endfor -%}
+        {{ ns.devices | sort }}
+
+    availability: '{{ integration_entities("mqtt") | count > 0 }}'

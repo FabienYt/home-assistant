@@ -1,0 +1,61 @@
+---
+id: zigbee_offline_devices
+alias: Zigbee - Appareils hors ligne
+description: ''
+
+triggers:
+  - trigger: homeassistant
+    event: start
+    id: startup
+  - trigger: state
+    entity_id: sensor.zigbee_offline_devices
+    attribute: devices
+    id: change
+
+conditions:
+  - condition: template
+    value_template: >-
+      {{ trigger.id == 'startup'
+         or (now() - (this.last_changed | as_datetime) > timedelta(minutes=3)
+             and trigger.from_state is not none
+             and trigger.to_state is not none
+             and trigger.from_state.state not in ['unavailable', 'unknown']
+             and trigger.to_state.state not in ['unavailable', 'unknown']) }}
+
+actions:
+  - alias: Attente de la reconnexion des appareils au démarrage
+    if:
+      - condition: trigger
+        id: startup
+    then:
+      - delay: '00:03:00'
+
+  - variables:
+      previous: >-
+        {{ [] if trigger.id == 'startup'
+           else trigger.from_state.attributes.devices | default([], true) }}
+      current: >-
+        {{ state_attr('sensor.zigbee_offline_devices', 'devices') | default([], true)
+           if trigger.id == 'startup'
+           else trigger.to_state.attributes.devices | default([], true) }}
+      went_offline: '{{ current | reject("in", previous) | list }}'
+      recovered: '{{ previous | reject("in", current) | list }}'
+
+  - repeat:
+      for_each: >-
+        {{ [{'title': '🆘 Zigbee - Appareil(s) hors ligne', 'devices': went_offline},
+            {'title': '✅ Zigbee - Appareil(s) rétabli(s)', 'devices': recovered}]
+           | selectattr('devices') | list }}
+      sequence:
+        - action: script.notification_management
+          data:
+            recipient: signal_house
+            title: '{{ repeat.item.title }}'
+            message: |-
+              {% for device in repeat.item.devices -%}
+              {%- set area = area_name(device) -%}
+              - **{{ device_attr(device, 'name_by_user') or device_attr(device, 'name') }}**{{ ' *(' ~ area ~ ')*' if area else '' }}
+              {% endfor %}
+
+mode: parallel
+max: 10
