@@ -1,0 +1,60 @@
+---
+id: weather_alert
+alias: Météo - Vigilance Météo-France
+description: ''
+
+triggers:
+  - trigger: state
+    entity_id: !secret meteo_france_alert_entity
+    to:
+      - Jaune
+      - Orange
+      - Rouge
+    id: alert
+  - trigger: state
+    entity_id: !secret meteo_france_alert_entity
+    from:
+      - Jaune
+      - Orange
+      - Rouge
+    to: Vert
+    id: clear
+
+variables:
+  alert_colors:
+    Jaune: 🟡
+    Orange: 🟠
+    Rouge: 🔴
+
+actions:
+  - choose:
+      - alias: Vigilance en cours
+        conditions:
+          - condition: trigger
+            id: alert
+        sequence:
+          - action: script.notification_management
+            data:
+              recipient: signal_house
+              title: >-
+                {{ alert_colors[trigger.to_state.state] }} Météo - Vigilance {{ trigger.to_state.state | lower }}
+              message: |-
+                {%- set ns = namespace(risks=[]) -%}
+                {%- for risk, level in trigger.to_state.attributes.items() if level is string and level in alert_colors -%}
+                  {%- set ns.risks = ns.risks + [risk] -%}
+                {%- endfor -%}
+                {{ ns.risks | join(', ') if ns.risks else 'Aucun motif détaillé communiqué par Météo-France.' }}
+
+      - alias: Retour à la normale
+        conditions:
+          - condition: trigger
+            id: clear
+        sequence:
+          - action: script.notification_management
+            data:
+              recipient: signal_house
+              title: ✅ Météo - Retour à la normale
+              message: Fin de la vigilance météo, retour au niveau vert.
+
+mode: queued
+max: 10
