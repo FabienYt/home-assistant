@@ -27,7 +27,11 @@ entities/                       Entités écrites à la main, une par fichier
 ├── sql/                        Capteurs issus d'une requête sur la base du recorder
 └── templates/                  Capteurs et binary_sensors calculés
 automations.yaml                Automatisations gérées depuis l'interface
-automations/                    Automatisations écrites à la main
+automations/                    Automatisations écrites à la main, une par fichier, par catégorie
+├── comfort/                    Confort de vie (éclairage, télécommandes…)
+├── energy/                     Gestion de l'énergie (charge des VE…)
+├── security/                   Alertes de sécurité (météo, fuite d'eau, fumée…)
+└── system/                     Maintenance de Home Assistant (sauvegardes, mises à jour…)
 scripts.yaml                    Scripts gérés depuis l'interface
 scripts/                        Scripts écrits à la main
 scenes.yaml                     Scènes
@@ -61,7 +65,7 @@ si Apprise fait toujours la sourde oreille. La domotique a le droit de tomber en
 pas de le garder pour elle.
 
 Les alertes de sécurité — fuite d'eau, monoxyde de carbone et fumée — sont gérées par
-[`automations/safety_alerts.yaml`](automations/safety_alerts.yaml) : notification sur le
+[`automations/security/safety_alerts.yaml`](automations/security/safety_alerts.yaml) : notification sur le
 canal du foyer et sirène du détecteur de fumée de l'entrée, coupée au retour à la
 normale ou au bout de cinq minutes.
 
