@@ -16,7 +16,7 @@ conditions:
   - condition: template
     value_template: >-
       {{ trigger.id == 'startup'
-         or (now() - this.last_changed > timedelta(minutes=3)
+         or (now() - (this.last_changed | as_datetime) > timedelta(minutes=3)
              and trigger.from_state is not none
              and trigger.to_state is not none
              and trigger.from_state.state not in ['unavailable', 'unknown']
