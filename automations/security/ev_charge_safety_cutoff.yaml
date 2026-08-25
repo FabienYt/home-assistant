@@ -1,0 +1,89 @@
+---
+id: ev_charge_safety_cutoff
+alias: Sécurité - Coupure du chargeur des VE
+description: ''
+
+triggers:
+  - trigger: state
+    entity_id: &safety_sensors
+      - binary_sensor.cellier_capteur_de_fuites_d_eau_klippbok_fuite_d_eau
+      - binary_sensor.cellier_capteur_de_monoxyde_de_carbone_heiman_monoxyde_de_carbone
+      - binary_sensor.entree_detecteur_de_fumee_heiman_fumee
+    to: 'on'
+    id: alert
+  - trigger: state
+    entity_id: *safety_sensors
+    from: 'on'
+    to: 'off'
+    for: '00:10:00'
+    id: clear
+
+variables:
+  monitored: *safety_sensors
+  device_icons:
+    moisture: 💧
+    carbon_monoxide: ⚠️
+    smoke: 🔥
+  area: '{{ area_name(trigger.entity_id) }}'
+  label: >-
+    {{ device_icons[trigger.to_state.attributes.device_class] | default('🚨', true) }}
+    **{{ trigger.to_state.attributes.friendly_name or trigger.entity_id }}**{{
+      ' *(' ~ area ~ ')*' if area else '' }}
+  others_active: >-
+    {{ expand(monitored)
+       | rejectattr('entity_id', 'eq', trigger.entity_id)
+       | selectattr('state', 'eq', 'on') | list | count > 0 }}
+
+actions:
+  - choose:
+      - alias: Coupure de la charge sur alerte
+        conditions:
+          - condition: trigger
+            id: alert
+        sequence:
+          - action: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.ev_charge_inhibited
+
+          - action: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.ev_forced_charge
+
+          - action: switch.turn_off
+            continue_on_error: true
+            target:
+              entity_id: switch.cellier_interrupteur_chargeur_des_ve
+
+          - action: script.notification_management
+            data:
+              recipient: signal_house
+              title: ⚡ Sécurité - Chargeur des VE coupé
+              message: |-
+                {{ label }}
+
+                La charge restera bloquée jusqu'à 10 minutes après la fin de l'alerte.
+
+      - alias: Fin d'alerte, charge de nouveau autorisée
+        conditions:
+          - condition: trigger
+            id: clear
+          - condition: template
+            value_template: '{{ not others_active }}'
+          - condition: state
+            entity_id: input_boolean.ev_charge_inhibited
+            state: 'on'
+        sequence:
+          - action: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.ev_charge_inhibited
+
+          - action: script.notification_management
+            data:
+              recipient: signal_house
+              title: ✅ Sécurité - Charge des VE de nouveau autorisée
+              message: >-
+                La charge reprendra selon la gestion habituelle (heures creuses ou
+                charge forcée).
+
+mode: queued
+max: 10
