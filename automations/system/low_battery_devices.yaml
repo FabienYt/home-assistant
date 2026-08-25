@@ -1,0 +1,96 @@
+---
+id: low_battery_devices
+alias: Batteries - Niveau faible
+description: ''
+
+triggers:
+  - trigger: homeassistant
+    event: start
+    id: refresh
+  - trigger: event
+    event_type: automation_reloaded
+    id: refresh
+  - trigger: time
+    at: '09:00:00'
+    id: daily
+  - trigger: template
+    value_template: >-
+      {{ states.binary_sensor
+         | selectattr('attributes.device_class', 'eq', 'battery')
+         | selectattr('state', 'eq', 'on') | list | count > 0 }}
+    id: hardware_alert
+
+variables:
+  battery_low_threshold: 20
+  battery_excluded_devices: []
+
+actions:
+  - alias: Attente de la remontée des états au démarrage
+    if:
+      - condition: trigger
+        id: refresh
+    then:
+      - delay: '00:01:00'
+
+  - variables:
+      low_batteries: >-
+        {% set ns = namespace(batteries=[]) %}
+        {% for battery in states.sensor
+           | selectattr('attributes.device_class', 'eq', 'battery')
+           | selectattr('state', 'is_number') %}
+          {% set device = device_id(battery.entity_id) %}
+          {% set device_name = (device_attr(device, 'name_by_user') or device_attr(device, 'name'))
+                               if device else none %}
+          {% if battery.entity_id not in battery_excluded_devices
+                and device_name not in battery_excluded_devices
+                and battery.state | float < battery_low_threshold %}
+            {% set ns.batteries = ns.batteries
+               + [{'entity_id': battery.entity_id,
+                   'level': battery.state | float | round(0) | int}] %}
+          {% endif %}
+        {% endfor %}
+        {{ ns.batteries | sort(attribute='level') }}
+      hardware_alerts: >-
+        {% set ns = namespace(batteries=[]) %}
+        {% for battery in states.binary_sensor
+           | selectattr('attributes.device_class', 'eq', 'battery')
+           | selectattr('state', 'eq', 'on') %}
+          {% set device = device_id(battery.entity_id) %}
+          {% set device_name = (device_attr(device, 'name_by_user') or device_attr(device, 'name'))
+                               if device else none %}
+          {% if battery.entity_id not in battery_excluded_devices
+                and device_name not in battery_excluded_devices %}
+            {% set ns.batteries = ns.batteries
+               + [{'entity_id': battery.entity_id, 'level': none}] %}
+          {% endif %}
+        {% endfor %}
+        {{ ns.batteries }}
+
+  - repeat:
+      for_each: >-
+        {{ [{'title': '🪫 Batteries - Niveau(x) faible(s)', 'batteries': low_batteries},
+            {'title': "🚨 Batteries - Alerte d'un détecteur", 'batteries': hardware_alerts}]
+           | selectattr('batteries') | list }}
+      sequence:
+        - action: script.notification_management
+          data:
+            recipient: signal_house
+            title: '{{ repeat.item.title }}'
+            message: |-
+              {% for battery in repeat.item.batteries -%}
+              {%- set area = area_name(battery.entity_id) -%}
+              {%- set device = device_id(battery.entity_id) -%}
+              {%- set name = (device_attr(device, 'name_by_user') or device_attr(device, 'name'))
+                             if device
+                             else state_attr(battery.entity_id, 'friendly_name') or battery.entity_id -%}
+              {%- set kind = device_entities(device) | select('search', 'type_de_batterie') | list | first
+                             if device else none -%}
+              {%- set kind_state = states(kind) if kind else '' -%}
+              - **{{ name }}**{{ ' *(' ~ area ~ ')*' if area else '' }}{{
+                  ' : ' ~ battery.level ~ ' %' if battery.level is not none else '' }}{{
+                  ' - pile ' ~ kind_state
+                  if kind_state not in ['', 'unknown', 'unavailable'] else '' }}
+              {% endfor %}
+
+mode: single
+max_exceeded: silent
