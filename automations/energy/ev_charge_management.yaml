@@ -37,6 +37,10 @@ triggers:
     entity_id:
       - switch.cellier_interrupteur_chargeur_des_ve
     id: switch
+  - trigger: state
+    entity_id:
+      - input_boolean.ev_charge_inhibited
+    id: inhibited
 
 conditions: []
 
@@ -64,6 +68,9 @@ actions:
           - condition: state
             entity_id: switch.cellier_interrupteur_chargeur_des_ve
             state: 'off'
+          - condition: state
+            entity_id: input_boolean.ev_charge_inhibited
+            state: 'off'
           - condition: or
             conditions:
               - condition: state
@@ -82,12 +89,19 @@ actions:
           - condition: state
             entity_id: switch.cellier_interrupteur_chargeur_des_ve
             state: 'on'
-          - condition: state
-            entity_id: input_boolean.ev_forced_charge
-            state: 'off'
-          - condition: state
-            entity_id: sensor.jardin_teleinfo_periode_tarifaire_en_cours
-            state: HP
+          - condition: or
+            conditions:
+              - condition: state
+                entity_id: input_boolean.ev_charge_inhibited
+                state: 'on'
+              - condition: and
+                conditions:
+                  - condition: state
+                    entity_id: input_boolean.ev_forced_charge
+                    state: 'off'
+                  - condition: state
+                    entity_id: sensor.jardin_teleinfo_periode_tarifaire_en_cours
+                    state: HP
         sequence:
           - action: switch.turn_off
             target:
