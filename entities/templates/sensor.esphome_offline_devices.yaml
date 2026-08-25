@@ -1,0 +1,36 @@
+---
+sensor:
+  - default_entity_id: sensor.esphome_offline_devices
+    name: ESPHome - Appareils hors ligne
+    unique_id: 'a27269e0-f32c-4e4c-a2dc-f4b47be5e439'
+
+    state: >-
+      {%- set listed = this.attributes.devices | default([], true) if this is defined else [] -%}
+      {%- set ns = namespace(devices=[]) -%}
+      {%- for s in expand(integration_entities('esphome'))
+                    | selectattr('domain', 'eq', 'binary_sensor')
+                    | selectattr('entity_id', 'search', '_status$')
+                    | selectattr('state', 'in', ['off', 'unavailable']) -%}
+        {%- set device = device_id(s.entity_id) -%}
+        {%- if device in listed or now() - s.last_changed > timedelta(minutes=5) -%}
+          {%- set ns.devices = ns.devices + [device] -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {{ ns.devices | reject('none') | unique | list | count }}
+
+    attributes:
+      devices: >-
+        {%- set listed = this.attributes.devices | default([], true) if this is defined else [] -%}
+        {%- set ns = namespace(devices=[]) -%}
+        {%- for s in expand(integration_entities('esphome'))
+                      | selectattr('domain', 'eq', 'binary_sensor')
+                      | selectattr('entity_id', 'search', '_status$')
+                      | selectattr('state', 'in', ['off', 'unavailable']) -%}
+          {%- set device = device_id(s.entity_id) -%}
+          {%- if device in listed or now() - s.last_changed > timedelta(minutes=5) -%}
+            {%- set ns.devices = ns.devices + [device] -%}
+          {%- endif -%}
+        {%- endfor -%}
+        {{ ns.devices | reject('none') | unique | list | sort }}
+
+    availability: '{{ integration_entities("esphome") | count > 0 }}'
