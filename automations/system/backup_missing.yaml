@@ -1,0 +1,78 @@
+---
+id: backup_missing
+alias: Sauvegarde - Aucune sauvegarde récente
+description: ''
+
+triggers:
+  - trigger: homeassistant
+    event: start
+    id: refresh
+  - trigger: event
+    event_type: automation_reloaded
+    id: refresh
+  - trigger: time
+    at: '09:15:00'
+    id: daily
+  - trigger: template
+    value_template: >-
+      {{ states('sensor.backup_backup_manager_state')
+         not in ['idle', 'unknown', 'unavailable'] }}
+    for: '02:00:00'
+    id: stuck
+
+variables:
+  backup_max_age_hours: 36
+
+actions:
+  - alias: Attente de la remontée des états au démarrage
+    if:
+      - condition: trigger
+        id: refresh
+    then:
+      - delay: '00:01:00'
+
+  - variables:
+      backup_overdue: >-
+        {{ (states('sensor.backup_last_successful_automatic_backup') | as_datetime) is none
+           or now() - (states('sensor.backup_last_successful_automatic_backup') | as_datetime)
+              > timedelta(hours=backup_max_age_hours) }}
+      schedule_missing: >-
+        {{ (states('sensor.backup_next_scheduled_automatic_backup') | as_datetime) is none }}
+
+  - choose:
+      - alias: Gestionnaire de sauvegarde bloqué
+        conditions:
+          - condition: trigger
+            id: stuck
+        sequence:
+          - action: script.notification_management
+            data:
+              recipient: signal_system
+              title: 🚨 Home Assistant - Sauvegarde bloquée
+              message: >-
+                Le gestionnaire de sauvegarde est dans l'état
+                `{{ states('sensor.backup_backup_manager_state') }}` depuis plus de 2 heures.
+
+      - alias: Aucune sauvegarde récente
+        conditions:
+          - condition: template
+            value_template: '{{ backup_overdue or schedule_missing }}'
+        sequence:
+          - action: script.notification_management
+            data:
+              recipient: signal_system
+              title: ⚠️ Home Assistant - Aucune sauvegarde récente
+              message: |-
+                {% set last_ok = states('sensor.backup_last_successful_automatic_backup') | as_datetime -%}
+                {% set last_try = states('sensor.backup_last_attempted_automatic_backup') | as_datetime -%}
+                {% set next_run = states('sensor.backup_next_scheduled_automatic_backup') | as_datetime -%}
+                - Dernière sauvegarde réussie : **{{ (last_ok | as_local).strftime('%d/%m/%Y à %Hh%M')
+                    ~ ' (il y a ' ~ ((now() - last_ok).total_seconds() / 3600) | round(0) | int ~ ' h)'
+                    if last_ok else 'jamais' }}**
+                - Dernière tentative : **{{ (last_try | as_local).strftime('%d/%m/%Y à %Hh%M')
+                    if last_try else 'aucune' }}**
+                - Prochaine planifiée : **{{ (next_run | as_local).strftime('%d/%m/%Y à %Hh%M')
+                    if next_run else 'aucune planification active' }}**
+
+mode: single
+max_exceeded: silent
