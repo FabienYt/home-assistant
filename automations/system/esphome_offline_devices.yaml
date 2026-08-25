@@ -1,0 +1,47 @@
+---
+id: esphome_offline_devices
+alias: ESPHome - Appareils hors ligne
+description: ''
+initial_state: false
+
+triggers:
+  - trigger: state
+    entity_id: sensor.esphome_offline_devices
+    attribute: devices
+    id: change
+
+conditions:
+  - condition: template
+    value_template: >-
+      {{ trigger.to_state is not none
+         and trigger.to_state.state not in ['unavailable', 'unknown'] }}
+
+actions:
+  - variables:
+      previous: >-
+        {{ trigger.from_state.attributes.devices | default([], true)
+           if trigger.from_state is not none
+              and trigger.from_state.state not in ['unavailable', 'unknown']
+           else [] }}
+      current: '{{ trigger.to_state.attributes.devices | default([], true) }}'
+      went_offline: '{{ current | reject("in", previous) | list }}'
+      recovered: '{{ previous | reject("in", current) | list }}'
+
+  - repeat:
+      for_each: >-
+        {{ [{'title': '🆘 ESPHome - Appareil(s) hors ligne', 'devices': went_offline},
+            {'title': '✅ ESPHome - Appareil(s) rétabli(s)', 'devices': recovered}]
+           | selectattr('devices') | list }}
+      sequence:
+        - action: script.notification_management
+          data:
+            recipient: signal_house
+            title: '{{ repeat.item.title }}'
+            message: |-
+              {% for device in repeat.item.devices -%}
+              {%- set area = area_name(device) -%}
+              - **{{ device_attr(device, 'name_by_user') or device_attr(device, 'name') }}**{{ ' *(' ~ area ~ ')*' if area else '' }}
+              {% endfor %}
+
+mode: parallel
+max: 10
