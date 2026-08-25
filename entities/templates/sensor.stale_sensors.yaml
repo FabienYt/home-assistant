@@ -1,0 +1,36 @@
+---
+sensor:
+  - default_entity_id: sensor.stale_sensors
+    name: Capteurs - Données figées
+    unique_id: '430c62ff-eade-4ca9-8432-4b0c1907cfc8'
+
+    state: >-
+      {%- set ns = namespace(sensors=[]) -%}
+      {%- for s in expand(integration_entities('esphome') + integration_entities('mqtt'))
+                    | selectattr('domain', 'eq', 'sensor')
+                    | rejectattr('state', 'in', ['unavailable', 'unknown'])
+                    | rejectattr('attributes.device_class', 'eq', 'timestamp')
+                    | rejectattr('entity_id', 'search', '(_version|_uptime)$') -%}
+        {%- if now() - s.last_reported > timedelta(minutes=120) -%}
+          {%- set ns.sensors = ns.sensors + [s.entity_id] -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {{ ns.sensors | count }}
+
+    attributes:
+      sensors: >-
+        {%- set ns = namespace(sensors=[]) -%}
+        {%- for s in expand(integration_entities('esphome') + integration_entities('mqtt'))
+                      | selectattr('domain', 'eq', 'sensor')
+                      | rejectattr('state', 'in', ['unavailable', 'unknown'])
+                      | rejectattr('attributes.device_class', 'eq', 'timestamp')
+                      | rejectattr('entity_id', 'search', '(_version|_uptime)$') -%}
+          {%- if now() - s.last_reported > timedelta(minutes=120) -%}
+            {%- set ns.sensors = ns.sensors + [s.entity_id] -%}
+          {%- endif -%}
+        {%- endfor -%}
+        {{ ns.sensors | sort }}
+
+    availability: >-
+      {{ integration_entities('esphome') | count > 0
+         or integration_entities('mqtt') | count > 0 }}
