@@ -11,7 +11,7 @@ sensor:
                     | rejectattr('state', 'in', ['unavailable', 'unknown'])
                     | rejectattr('attributes.device_class', 'eq', 'timestamp')
                     | rejectattr('entity_id', 'search', '(_version|_uptime)$') -%}
-        {%- if now() - s.last_reported > timedelta(minutes=120) -%}
+        {%- if now() - s.last_reported > timedelta(minutes=1440) -%}
           {%- set ns.sensors = ns.sensors + [s.entity_id] -%}
         {%- endif -%}
       {%- endfor -%}
@@ -25,7 +25,7 @@ sensor:
                       | rejectattr('state', 'in', ['unavailable', 'unknown'])
                       | rejectattr('attributes.device_class', 'eq', 'timestamp')
                       | rejectattr('entity_id', 'search', '(_version|_uptime)$') -%}
-          {%- if now() - s.last_reported > timedelta(minutes=120) -%}
+          {%- if now() - s.last_reported > timedelta(minutes=1440) -%}
             {%- set ns.sensors = ns.sensors + [s.entity_id] -%}
           {%- endif -%}
         {%- endfor -%}
