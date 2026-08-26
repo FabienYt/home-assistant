@@ -15,6 +15,9 @@ triggers:
     id: refresh
   - trigger: state
     entity_id: light.salon_ampoule_led_e27_1521_lumen_kajplats
+    not_from:
+      - unavailable
+      - unknown
     to: 'on'
     id: light_on
 
