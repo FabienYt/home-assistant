@@ -6,21 +6,20 @@ description: ''
 triggers:
   - trigger: state
     entity_id: event.salon_telecommande_blanche_a_molette_bilresa_bouton_1
-    not_to:
+    not_from: &restore_states
       - unavailable
       - unknown
+    not_to: *restore_states
     id: wheel_up
   - trigger: state
     entity_id: event.salon_telecommande_blanche_a_molette_bilresa_bouton_2
-    not_to:
-      - unavailable
-      - unknown
+    not_from: *restore_states
+    not_to: *restore_states
     id: wheel_down
   - trigger: state
     entity_id: event.salon_telecommande_blanche_a_molette_bilresa_bouton_3
-    not_to:
-      - unavailable
-      - unknown
+    not_from: *restore_states
+    not_to: *restore_states
     id: button
 
 conditions: []
