@@ -1,0 +1,30 @@
+---
+extends: default
+
+ignore: |
+  .storage/
+  .cloud/
+  .cache/
+  custom_components/
+  deps/
+  zigbee2mqtt/
+  esphome/.esphome/
+  www/community/
+  tts/
+  image/
+  backups/
+  /secrets.yaml
+  /automations.yaml
+  /scripts.yaml
+  /scenes.yaml
+  /blueprints/automation/homeassistant/motion_light.yaml
+  /blueprints/automation/homeassistant/notify_leaving_zone.yaml
+  /blueprints/script/homeassistant/confirmable_notification.yaml
+  /blueprints/template/homeassistant/inverted_binary_sensor.yaml
+
+rules:
+  indentation:
+    spaces: 2
+    indent-sequences: true
+  line-length: disable
+  truthy: disable

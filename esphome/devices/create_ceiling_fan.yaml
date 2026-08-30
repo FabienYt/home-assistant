@@ -43,10 +43,10 @@ light:
     name: "Light"
     switch_datapoint: 20
     restore_mode: ALWAYS_OFF
-    #color_temperature_datapoint: 23
-    #warm_white_color_temperature: 500 mireds
-    #cold_white_color_temperature: 153 mireds
-    #color_temperature_max_value: 500
+    # color_temperature_datapoint: 23
+    # warm_white_color_temperature: 500 mireds
+    # cold_white_color_temperature: 153 mireds
+    # color_temperature_max_value: 500
     dimmer_datapoint: 22
     max_value: 1000
 

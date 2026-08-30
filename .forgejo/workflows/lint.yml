@@ -1,0 +1,40 @@
+---
+name: Lint
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  yamllint:
+    name: yamllint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run yamllint
+        uses: docker://python:slim
+        with:
+          entrypoint: sh
+          args: -c "pip install --quiet --no-cache-dir yamllint && yamllint --strict -c .yamllint.yml ."
+
+  gitleaks:
+    name: gitleaks (full history)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run gitleaks
+        uses: docker://ghcr.io/gitleaks/gitleaks:latest
+        with:
+          args: git --redact --verbose --no-banner --exit-code 1 --log-opts="--all --full-history" .
