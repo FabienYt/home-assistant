@@ -1,0 +1,13 @@
+---
+power:
+  id: ${inverter}_pv${pv_n}_power
+  name: ${inverter} PV${pv_n} Power
+voltage:
+  id: ${inverter}_pv${pv_n}_voltage
+  name: ${inverter} PV${pv_n} Voltage
+current:
+  id: ${inverter}_pv${pv_n}_current
+  name: ${inverter} PV${pv_n} Current
+energy:
+  id: ${inverter}_pv${pv_n}_energy
+  name: ${inverter} PV${pv_n} Energy

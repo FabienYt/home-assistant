@@ -164,54 +164,10 @@ hms_inverter:
         name: ${inverter1} Limit Absolute
 
       dc_channels:
-        - power:
-            id: ${inverter1}_pv1_power
-            name: ${inverter1} PV1 Power
-          voltage:
-            id: ${inverter1}_pv1_voltage
-            name: ${inverter1} PV1 Voltage
-          current:
-            id: ${inverter1}_pv1_current
-            name: ${inverter1} PV1 Current
-          energy:
-            id: ${inverter1}_pv1_energy
-            name: ${inverter1} PV1 Energy
-        - power:
-            id: ${inverter1}_pv2_power
-            name: ${inverter1} PV2 Power
-          voltage:
-            id: ${inverter1}_pv2_voltage
-            name: ${inverter1} PV2 Voltage
-          current:
-            id: ${inverter1}_pv2_current
-            name: ${inverter1} PV2 Current
-          energy:
-            id: ${inverter1}_pv2_energy
-            name: ${inverter1} PV2 Energy
-        - power:
-            id: ${inverter1}_pv3_power
-            name: ${inverter1} PV3 Power
-          voltage:
-            id: ${inverter1}_pv3_voltage
-            name: ${inverter1} PV3 Voltage
-          current:
-            id: ${inverter1}_pv3_current
-            name: ${inverter1} PV3 Current
-          energy:
-            id: ${inverter1}_pv3_energy
-            name: ${inverter1} PV3 Energy
-        - power:
-            id: ${inverter1}_pv4_power
-            name: ${inverter1} PV4 Power
-          voltage:
-            id: ${inverter1}_pv4_voltage
-            name: ${inverter1} PV4 Voltage
-          current:
-            id: ${inverter1}_pv4_current
-            name: ${inverter1} PV4 Current
-          energy:
-            id: ${inverter1}_pv4_energy
-            name: ${inverter1} PV4 Energy
+        - !include {file: "../components/hoymiles_pv_channel.yaml", vars: {inverter: "${inverter1}", pv_n: "1"}}
+        - !include {file: "../components/hoymiles_pv_channel.yaml", vars: {inverter: "${inverter1}", pv_n: "2"}}
+        - !include {file: "../components/hoymiles_pv_channel.yaml", vars: {inverter: "${inverter1}", pv_n: "3"}}
+        - !include {file: "../components/hoymiles_pv_channel.yaml", vars: {inverter: "${inverter1}", pv_n: "4"}}
 
       ac_channel:
         power:
