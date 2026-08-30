@@ -12,12 +12,12 @@ packages:
 teleinfo:
   id: teleinfo_main
   update_interval: 5s
-  historical_mode: true # false en mode standard
+  historical_mode: true  # false en mode standard
 
 uart:
   id: uart_bus
   rx_pin: GPIO36
-  baud_rate: 1200 # 9600 en mode standard
+  baud_rate: 1200  # 9600 en mode standard
   parity: EVEN
   data_bits: 7
   stop_bits: 1
