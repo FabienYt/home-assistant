@@ -10,13 +10,6 @@ packages:
   bluetooth_proxy: !include ../components/bluetooth_proxy.yaml
   wifi: !include ../components/wifi.yaml
 
-esphome:
-  platformio_options:
-    board_build.mcu: esp32c3
-    board_build.f_cpu: 160000000L
-    board_build.f_flash: 40000000L
-    board_build.flash_mode: dio
-
 uart:
   rx_pin: GPIO20
   tx_pin: GPIO21
@@ -49,12 +42,5 @@ light:
     # color_temperature_max_value: 500
     dimmer_datapoint: 22
     max_value: 1000
-
-switch:
-  - platform: "tuya"
-    id: switch_device
-    name: "Buzzer"
-    switch_datapoint: 66
-    restore_mode: ALWAYS_OFF
 
 web_server: !remove
