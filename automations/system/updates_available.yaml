@@ -6,25 +6,37 @@ description: ''
 triggers:
   - trigger: homeassistant
     event: start
+    id: refresh
   - trigger: event
     event_type: automation_reloaded
+    id: refresh
   - trigger: state
     entity_id:
       - sensor.updates_available
 
-conditions:
+actions:
+  - alias: Attente de la remontée des états au démarrage
+    if:
+      - condition: trigger
+        id: refresh
+    then:
+      - delay: '00:01:00'
+
   - condition: numeric_state
     entity_id: sensor.updates_available
     above: 0
 
-actions:
   - action: script.notification_management
     data:
       recipient: signal_system
       title: 🆕 Home Assistant - Mise(s) à jour disponible(s)
       message: |-
         {% for update in state_attr('sensor.updates_available', 'updates') -%}
-          {{ device_attr(update, 'name') }} : **{{ state_attr(update, 'installed_version') }}** -> **{{ state_attr(update, 'latest_version') }}**
+        {%- set device = device_id(update) -%}
+        {%- set name = (device_attr(device, 'name_by_user') or device_attr(device, 'name'))
+                       if device
+                       else state_attr(update, 'friendly_name') or update -%}
+        - **{{ name }}** : **{{ state_attr(update, 'installed_version') }}** -> **{{ state_attr(update, 'latest_version') }}**
         {% endfor %}
 
 mode: single
