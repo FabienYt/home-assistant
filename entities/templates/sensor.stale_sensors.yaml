@@ -10,8 +10,10 @@ sensor:
                     | selectattr('domain', 'eq', 'sensor')
                     | rejectattr('state', 'in', ['unavailable', 'unknown'])
                     | rejectattr('attributes.device_class', 'eq', 'timestamp')
+                    | rejectattr('attributes.device_class', 'in', ['battery', 'precipitation', 'precipitation_intensity'])
                     | rejectattr('entity_id', 'search', '(_version|_uptime)$') -%}
-        {%- if now() - s.last_reported > timedelta(minutes=1440) -%}
+        {%- if now() - s.last_reported > timedelta(minutes=1440)
+              and entity_attr(s.entity_id, 'entity_category') != 'diagnostic' -%}
           {%- set ns.sensors = ns.sensors + [s.entity_id] -%}
         {%- endif -%}
       {%- endfor -%}
@@ -24,8 +26,10 @@ sensor:
                       | selectattr('domain', 'eq', 'sensor')
                       | rejectattr('state', 'in', ['unavailable', 'unknown'])
                       | rejectattr('attributes.device_class', 'eq', 'timestamp')
+                      | rejectattr('attributes.device_class', 'in', ['battery', 'precipitation', 'precipitation_intensity'])
                       | rejectattr('entity_id', 'search', '(_version|_uptime)$') -%}
-          {%- if now() - s.last_reported > timedelta(minutes=1440) -%}
+          {%- if now() - s.last_reported > timedelta(minutes=1440)
+                and entity_attr(s.entity_id, 'entity_category') != 'diagnostic' -%}
             {%- set ns.sensors = ns.sensors + [s.entity_id] -%}
           {%- endif -%}
         {%- endfor -%}
