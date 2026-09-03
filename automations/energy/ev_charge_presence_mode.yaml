@@ -1,0 +1,56 @@
+---
+id: ev_charge_presence_mode
+alias: VE - Inhibition de la charge en mode Vacances
+description: ''
+
+triggers:
+  - trigger: homeassistant
+    event: start
+    id: refresh
+  - trigger: event
+    event_type: automation_reloaded
+    id: refresh
+  - trigger: state
+    entity_id: input_select.presence_mode
+
+conditions: []
+
+actions:
+  - alias: Attente de la remontée des états au démarrage
+    if:
+      - condition: trigger
+        id: refresh
+    then:
+      - delay: '00:01:00'
+
+  - choose:
+      - alias: Entrée en mode Vacances
+        conditions:
+          - condition: state
+            entity_id: input_select.presence_mode
+            state: Vacances
+          - condition: state
+            entity_id: input_boolean.ev_charge_inhibited
+            state: 'off'
+        sequence:
+          - action: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.ev_charge_inhibited
+
+      - alias: Sortie du mode Vacances
+        conditions:
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: input_select.presence_mode
+                state: Vacances
+          - condition: state
+            entity_id: input_boolean.ev_charge_inhibited
+            state: 'on'
+        sequence:
+          - action: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.ev_charge_inhibited
+
+mode: single
+max_exceeded: silent

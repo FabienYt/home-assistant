@@ -1,0 +1,7 @@
+---
+name: Mode de présence
+icon: mdi:home-account
+options:
+  - Présent
+  - Absent
+  - Vacances
