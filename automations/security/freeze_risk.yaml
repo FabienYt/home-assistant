@@ -1,0 +1,58 @@
+---
+id: freeze_risk
+alias: Météo - Risque de gel
+description: ''
+
+triggers:
+  - trigger: homeassistant
+    event: start
+    id: refresh
+  - trigger: event
+    event_type: automation_reloaded
+    id: refresh
+  - trigger: time
+    at: "20:00:00"
+    id: daily
+
+conditions:
+  - condition: template
+    value_template: >-
+      {{ trigger.id == 'daily' or
+         (now().hour >= 20 and
+          (this.attributes.last_triggered is none
+           or as_local(this.attributes.last_triggered).date() != now().date()
+           or as_local(this.attributes.last_triggered).hour < 20)) }}
+
+variables:
+  freeze_risk_threshold: 50
+  freeze_chance_entity: !secret meteo_france_freeze_chance_entity
+  snow_chance_entity: !secret meteo_france_snow_chance_entity
+
+actions:
+  - alias: Attente de la remontée des états au démarrage
+    if:
+      - condition: trigger
+        id: refresh
+    then:
+      - delay: '00:01:00'
+
+  - variables:
+      freeze_chance: "{{ states(freeze_chance_entity) | float(0) | round(0) | int }}"
+      snow_chance: "{{ states(snow_chance_entity) | float(0) | round(0) | int }}"
+
+  - if:
+      - condition: template
+        value_template: >-
+          {{ freeze_chance >= freeze_risk_threshold or snow_chance >= freeze_risk_threshold }}
+    then:
+      - action: script.notification_management
+        data:
+          recipient: signal_house
+          title: 🥶 Météo - Risque de gel cette nuit
+          message: >-
+            {{ freeze_chance }} % de risque de gel{{ ', ' ~ snow_chance ~ ' % de risque de neige' if snow_chance >= freeze_risk_threshold else '' }} cette nuit.
+
+            Pensez à protéger les points sensibles (robinets, tuyaux exposés) avant la nuit.
+
+mode: single
+max_exceeded: silent
