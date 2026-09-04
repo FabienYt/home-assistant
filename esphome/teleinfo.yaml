@@ -14,6 +14,30 @@ teleinfo:
   update_interval: 5s
   historical_mode: true  # false en mode standard
 
+globals:
+  - id: teleinfo_frame_count
+    type: int
+    restore_value: false
+    initial_value: '0'
+  - id: teleinfo_last_frame_count
+    type: int
+    restore_value: false
+    initial_value: '0'
+
+interval:
+  - interval: 10min
+    then:
+      - if:
+          condition:
+            lambda: 'return id(teleinfo_frame_count) == id(teleinfo_last_frame_count);'
+          then:
+            - logger.log:
+                level: ERROR
+                tag: teleinfo_watchdog
+                format: Aucune trame Teleinfo reçue depuis 10 min, redémarrage
+            - button.press: button_restart
+      - lambda: 'id(teleinfo_last_frame_count) = id(teleinfo_frame_count);'
+
 uart:
   id: uart_bus
   rx_pin: GPIO36
@@ -77,6 +101,8 @@ sensor:
     state_class: "measurement"
     teleinfo_id: teleinfo_main
     unit_of_measurement: VA
+    on_value:
+      - lambda: 'id(teleinfo_frame_count) += 1;'
 
   - platform: teleinfo
     tag_name: "IINST"
