@@ -5,6 +5,7 @@ sensor:
     unique_id: '430c62ff-eade-4ca9-8432-4b0c1907cfc8'
 
     state: >-
+      {%- set stale_thresholds = {'apparent_power': 20, 'current': 20} -%}
       {%- set ns = namespace(sensors=[]) -%}
       {%- for s in expand(integration_entities('esphome') + integration_entities('mqtt'))
                     | selectattr('domain', 'eq', 'sensor')
@@ -12,7 +13,8 @@ sensor:
                     | rejectattr('attributes.device_class', 'eq', 'timestamp')
                     | rejectattr('attributes.device_class', 'in', ['battery', 'precipitation', 'precipitation_intensity'])
                     | rejectattr('entity_id', 'search', '(_version|_uptime)$') -%}
-        {%- if now() - s.last_reported > timedelta(minutes=1440)
+        {%- set threshold = stale_thresholds.get(s.attributes.device_class, 1440) -%}
+        {%- if now() - s.last_reported > timedelta(minutes=threshold)
               and entity_attr(s.entity_id, 'entity_category') != 'diagnostic' -%}
           {%- set ns.sensors = ns.sensors + [s.entity_id] -%}
         {%- endif -%}
@@ -21,6 +23,7 @@ sensor:
 
     attributes:
       sensors: >-
+        {%- set stale_thresholds = {'apparent_power': 20, 'current': 20} -%}
         {%- set ns = namespace(sensors=[]) -%}
         {%- for s in expand(integration_entities('esphome') + integration_entities('mqtt'))
                       | selectattr('domain', 'eq', 'sensor')
@@ -28,7 +31,8 @@ sensor:
                       | rejectattr('attributes.device_class', 'eq', 'timestamp')
                       | rejectattr('attributes.device_class', 'in', ['battery', 'precipitation', 'precipitation_intensity'])
                       | rejectattr('entity_id', 'search', '(_version|_uptime)$') -%}
-          {%- if now() - s.last_reported > timedelta(minutes=1440)
+          {%- set threshold = stale_thresholds.get(s.attributes.device_class, 1440) -%}
+          {%- if now() - s.last_reported > timedelta(minutes=threshold)
                 and entity_attr(s.entity_id, 'entity_category') != 'diagnostic' -%}
             {%- set ns.sensors = ns.sensors + [s.entity_id] -%}
           {%- endif -%}
