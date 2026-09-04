@@ -4,7 +4,7 @@ substitutions:
   name: Hoymiles
 
   api_encryption_key: !secret esphome_hoymiles_api_encryption_key
-  logger_level: DEBUG
+  logger_level: INFO
 
 packages:
   device: !include devices/hoymiles.yaml
