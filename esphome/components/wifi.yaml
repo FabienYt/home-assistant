@@ -17,3 +17,8 @@ wifi:
   ap:
     ssid: "${wifi_ap_ssid}"
     password: !secret esphome_wifi_ap_password
+
+sensor:
+  - platform: wifi_signal
+    name: "${name} WiFi Signal"
+    update_interval: 60s
