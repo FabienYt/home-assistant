@@ -101,6 +101,7 @@ sensor:
     state_class: "measurement"
     teleinfo_id: teleinfo_main
     unit_of_measurement: VA
+    force_update: true
     on_value:
       - lambda: 'id(teleinfo_frame_count) += 1;'
 
@@ -113,6 +114,7 @@ sensor:
     state_class: "measurement"
     teleinfo_id: teleinfo_main
     unit_of_measurement: A
+    force_update: true
 
 text_sensor:
   - platform: teleinfo
