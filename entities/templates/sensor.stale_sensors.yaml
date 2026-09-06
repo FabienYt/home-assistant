@@ -12,10 +12,9 @@ sensor:
                     | rejectattr('state', 'in', ['unavailable', 'unknown'])
                     | rejectattr('attributes.device_class', 'eq', 'timestamp')
                     | rejectattr('attributes.device_class', 'in', ['battery', 'precipitation', 'precipitation_intensity'])
-                    | rejectattr('entity_id', 'search', '(_version|_uptime)$') -%}
+                    | rejectattr('entity_id', 'search', '(_version|_uptime|_ip_address|_linkquality|_last_seen|_memory_(heap|psram)_(free|largest_block)|_screen_(active_timezone|date)|_network_map|_ws90_voltage|_ws90_capacitor_voltage)$') -%}
         {%- set threshold = stale_thresholds.get(s.attributes.device_class, 1440) -%}
-        {%- if now() - s.last_reported > timedelta(minutes=threshold)
-              and entity_attr(s.entity_id, 'entity_category') != 'diagnostic' -%}
+        {%- if now() - s.last_reported > timedelta(minutes=threshold) -%}
           {%- set ns.sensors = ns.sensors + [s.entity_id] -%}
         {%- endif -%}
       {%- endfor -%}
@@ -30,10 +29,9 @@ sensor:
                       | rejectattr('state', 'in', ['unavailable', 'unknown'])
                       | rejectattr('attributes.device_class', 'eq', 'timestamp')
                       | rejectattr('attributes.device_class', 'in', ['battery', 'precipitation', 'precipitation_intensity'])
-                      | rejectattr('entity_id', 'search', '(_version|_uptime)$') -%}
+                      | rejectattr('entity_id', 'search', '(_version|_uptime|_ip_address|_linkquality|_last_seen|_memory_(heap|psram)_(free|largest_block)|_screen_(active_timezone|date)|_network_map|_ws90_voltage|_ws90_capacitor_voltage)$') -%}
           {%- set threshold = stale_thresholds.get(s.attributes.device_class, 1440) -%}
-          {%- if now() - s.last_reported > timedelta(minutes=threshold)
-                and entity_attr(s.entity_id, 'entity_category') != 'diagnostic' -%}
+          {%- if now() - s.last_reported > timedelta(minutes=threshold) -%}
             {%- set ns.sensors = ns.sensors + [s.entity_id] -%}
           {%- endif -%}
         {%- endfor -%}
