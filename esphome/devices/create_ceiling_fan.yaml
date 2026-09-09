@@ -7,7 +7,6 @@ packages:
 
   board: !include ../boards/esp32_c3.yaml
 
-  bluetooth_proxy: !include ../components/bluetooth_proxy.yaml
   wifi: !include ../components/wifi.yaml
 
 uart:
@@ -42,5 +41,3 @@ light:
     # color_temperature_max_value: 500
     dimmer_datapoint: 22
     max_value: 1000
-
-web_server: !remove
