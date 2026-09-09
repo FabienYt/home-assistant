@@ -79,7 +79,7 @@ modèle. Toute la logique est factorisée ailleurs :
 esphome/
 ├── <appareil>.yaml             Point d'entrée : substitutions + packages
 ├── devices/                    Un modèle d'appareil complet
-├── boards/                     Cartes (ESP32-C3, Olimex POE ISO, Shelly gen1…)
+├── boards/                     Cartes (ESP32-C3, ESP32-S3 ETH, Olimex POE ISO, Shelly gen1…)
 ├── components/                 Briques réseau (Wi-Fi…)
 ├── common/                     Inclus partout : API, OTA, logger, temps, safe mode
 ├── binary_sensors/             Capteurs binaires réutilisables
