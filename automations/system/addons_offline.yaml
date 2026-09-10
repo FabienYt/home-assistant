@@ -25,6 +25,12 @@ variables:
   update_in_progress: >-
     {{ states.update | selectattr('attributes.in_progress', 'defined')
        | selectattr('attributes.in_progress') | list | count > 0 }}
+  restart_excluded_addons: []
+  restart_cooldown_hours: 6
+  restart_history: >-
+    {{ (states('input_text.addon_restart_history') | from_json)
+       if states('input_text.addon_restart_history') not in ['', 'unknown', 'unavailable']
+       else {} }}
 
 actions:
   - repeat:
@@ -34,39 +40,79 @@ actions:
             addon_name: >-
               {{ trigger.to_state.attributes.names[repeat.item]
                  | default(repeat.item) }}
-
-        - action: script.notification_management
-          data:
-            recipient: signal_system
-            title: 🚨 Home Assistant - Add-on hors ligne
-            message: |-
-              **{{ addon_name }}** est arrêté depuis plus d'une minute.
-
-              Tentative de redémarrage automatique en cours…
-
-        - action: hassio.app_start
-          continue_on_error: true
-          data:
-            app: '{{ repeat.item }}'
-
-        - wait_template: >-
-            {{ repeat.item not in
-               (state_attr('sensor.addons_offline', 'addons') or []) }}
-          timeout: '00:03:00'
-          continue_on_timeout: true
+            cooldown_not_elapsed: >-
+              {% set last_restart = restart_history.get(repeat.item, '') | as_datetime(none) %}
+              {{ last_restart is not none
+                 and now() - last_restart < timedelta(hours=restart_cooldown_hours) }}
 
         - if:
             - condition: template
-              value_template: '{{ not wait.completed }}'
+              value_template: '{{ repeat.item in restart_excluded_addons or cooldown_not_elapsed }}'
           then:
             - action: script.notification_management
               data:
                 recipient: signal_system
-                title: ❌ Home Assistant - Échec du redémarrage d'un add-on
+                title: ⚠️ Home Assistant - Add-on non relancé automatiquement
                 message: >-
-                  **{{ addon_name }}** n'a pas redémarré après la relance
-                  automatique (`{{ repeat.item }}`). Une intervention manuelle
-                  est nécessaire.
+                  {% if repeat.item in restart_excluded_addons %}
+                  **{{ addon_name }}** (`{{ repeat.item }}`) est arrêté, mais son
+                  redémarrage automatique est exclu par configuration.
+
+                  Une intervention manuelle est nécessaire.
+                  {% else %}
+                  **{{ addon_name }}** (`{{ repeat.item }}`) est arrêté, mais il a déjà
+                  été relancé automatiquement il y a moins de {{ restart_cooldown_hours }} h
+                  sans se stabiliser.
+
+                  Une intervention manuelle est nécessaire.
+                  {% endif %}
+          else:
+            - action: script.notification_management
+              data:
+                recipient: signal_system
+                title: 🚨 Home Assistant - Add-on hors ligne
+                message: |-
+                  **{{ addon_name }}** est arrêté depuis plus d'une minute.
+
+                  Tentative de redémarrage automatique en cours…
+
+            - action: input_text.set_value
+              target:
+                entity_id: input_text.addon_restart_history
+              data:
+                value: >-
+                  {% set updated = dict(restart_history, **{repeat.item: now().isoformat()}) %}
+                  {% set ns = namespace(pruned={}) %}
+                  {% for slug, timestamp in updated.items() %}
+                  {% if now() - (timestamp | as_datetime(now())) < timedelta(hours=restart_cooldown_hours) %}
+                  {% set ns.pruned = dict(ns.pruned, **{slug: timestamp}) %}
+                  {% endif %}
+                  {% endfor %}
+                  {{ ns.pruned | to_json }}
+
+            - action: hassio.app_start
+              continue_on_error: true
+              data:
+                app: '{{ repeat.item }}'
+
+            - wait_template: >-
+                {{ repeat.item not in
+                   (state_attr('sensor.addons_offline', 'addons') or []) }}
+              timeout: '00:03:00'
+              continue_on_timeout: true
+
+            - if:
+                - condition: template
+                  value_template: '{{ not wait.completed }}'
+              then:
+                - action: script.notification_management
+                  data:
+                    recipient: signal_system
+                    title: ❌ Home Assistant - Échec du redémarrage d'un add-on
+                    message: >-
+                      **{{ addon_name }}** n'a pas redémarré après la relance
+                      automatique (`{{ repeat.item }}`). Une intervention manuelle
+                      est nécessaire.
 
   - repeat:
       for_each: '{{ recovered }}'
