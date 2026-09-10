@@ -34,6 +34,8 @@ conditions:
     entity_id: light.salon_ampoule_led_e27_1521_lumen_kajplats
     state: 'on'
   - condition: template
+    value_template: '{{ states("sensor.sun_color_temp_kelvin") | is_number }}'
+  - condition: template
     value_template: '{{ trigger.id == "light_on" or (target - current) | abs > 20 }}'
 
 actions:
