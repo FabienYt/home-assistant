@@ -21,25 +21,57 @@ triggers:
     from: 'on'
     to: 'off'
     id: clear
+  - trigger: homeassistant
+    event: start
+    id: startup
 
 variables:
-  monitored: *safety_sensors
+  monitored: >-
+    {{ state_attr('binary_sensor.safety_monitored', 'monitored') | default([], true) }}
   device_icons:
     moisture: 💧
     carbon_monoxide: ⚠️
     smoke: 🔥
-  area: '{{ area_name(trigger.entity_id) }}'
+  area: >-
+    {{ area_name(trigger.entity_id) if trigger.entity_id is defined else none }}
   label: >-
+    {% if trigger.to_state is defined %}
     {{ device_icons[trigger.to_state.attributes.device_class] | default('🚨', true) }}
     **{{ trigger.to_state.attributes.friendly_name or trigger.entity_id }}**{{
       ' *(' ~ area ~ ')*' if area else '' }}
-  others_active: >-
+    {% endif %}
+  others_active_list: >-
     {{ expand(monitored)
        | rejectattr('entity_id', 'eq', trigger.entity_id)
-       | selectattr('state', 'eq', 'on') | list | count > 0 }}
+       | selectattr('state', 'eq', 'on')
+       | map(attribute='entity_id') | list }}
+  others_active: '{{ others_active_list | count > 0 }}'
 
 actions:
   - choose:
+      - alias: Synchronisation de la sirène au démarrage
+        conditions:
+          - condition: trigger
+            id: startup
+        sequence:
+          - delay: '00:00:15'
+
+          - if:
+              - condition: template
+                value_template: >-
+                  {{ expand(state_attr('binary_sensor.safety_monitored', 'active') | default([], true))
+                     | list | count > 0 }}
+            then:
+              - action: siren.turn_on
+                continue_on_error: true
+                target:
+                  entity_id: siren.entree_detecteur_de_fumee_heiman_sirene
+            else:
+              - action: siren.turn_off
+                continue_on_error: true
+                target:
+                  entity_id: siren.entree_detecteur_de_fumee_heiman_sirene
+
       - alias: Capteur en alerte
         conditions:
           - condition: trigger
@@ -89,11 +121,20 @@ actions:
                 target:
                   entity_id: siren.entree_detecteur_de_fumee_heiman_sirene
 
-          - action: script.notification_management
-            data:
-              recipient: signal_house
-              title: ✅ Sécurité - Retour à la normale
-              message: '{{ label }}'
+              - action: script.notification_management
+                data:
+                  recipient: signal_house
+                  title: ✅ Sécurité - Retour à la normale
+                  message: '{{ label }}'
+            else:
+              - action: script.notification_management
+                data:
+                  recipient: signal_house
+                  title: ⚠️ Sécurité - Alerte toujours en cours
+                  message: >-
+                    {{ label }} est revenu à la normale, mais
+                    **{{ others_active_list | count }}** autre(s) capteur(s)
+                    est(sont) toujours en alerte ; la sirène reste active.
 
 mode: queued
 max: 10

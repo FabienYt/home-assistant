@@ -19,7 +19,8 @@ triggers:
     id: clear
 
 variables:
-  monitored: *safety_sensors
+  monitored: >-
+    {{ state_attr('binary_sensor.safety_monitored', 'monitored') | default([], true) }}
   device_icons:
     moisture: 💧
     carbon_monoxide: ⚠️
