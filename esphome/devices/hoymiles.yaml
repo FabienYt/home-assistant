@@ -14,18 +14,11 @@ api:
 
 esp32:
   board: esp32dev
-  toolchain: platformio
   framework:
     type: arduino
     advanced:
       minimum_chip_revision: 3.1
       sram1_as_iram: true
-
-esphome:
-  on_boot:
-    priority: -100
-    then:
-      - script.execute: ${inverter1}_rssi_watchdog
 
 globals:
   - id: screen_offline_counter
@@ -113,112 +106,110 @@ interval:
               id(oled).turn_off();
             }
           }
+      - if:
+          condition:
+            binary_sensor.is_off: ${inverter1}_reachable
+          then:
+            - button.press: ${inverter1}_reset_hms
 
 external_components:
-  - source: github://SeByDocKy/myESPhome
-    components: [hms_inverter]
-    refresh: 0s
+  - source: "github://SeByDocKy/myESPhome/"
+    components: [cmt2300a, hms]
+    refresh: 10s
 
-hms_inverter:
-  id: hms_platform
-  update_interval: 10s
-  pins:
-    clk: GPIO18
-    cs: GPIO4
-    fcs:
-      number: GPIO5
-      ignore_strapping_warning: true
-    sdio: GPIO23
-    gpio2: GPIO19
-    gpio3: GPIO16
-  inverters:
-    - serial: "xxx"
-      full_power_startup: true
+cmt2300a:
+  id: cmt_radio
+  clk_pin: GPIO18
+  sdio_pin: GPIO23
+  cs_pin: GPIO4
+  fcs_pin:
+    number: GPIO5
+    ignore_strapping_warning: true
 
-      reachable:
-        id: ${inverter1}_reachable
-        name: ${inverter1} Reachable
-        on_press:
-          # Rallumage immédiat dès que l'onduleur revient (l'interval
-          # sert de filet de sécurité si ce front est manqué)
-          - globals.set:
-              id: screen_offline_counter
-              value: '0'
-          - lambda: 'id(oled).turn_on();'
-      rssi:
-        id: ${inverter1}_rssi
-        name: ${inverter1} RSSI
-        on_value:
-          - script.execute: ${inverter1}_rssi_watchdog
-      producing:
-        id: ${inverter1}_producing
-        name: ${inverter1} Producing
-      restart:
-        id: ${inverter1}_restart
-        name: ${inverter1} Restart
-      limit_percent:
-        id: ${inverter1}_limit_percent
-        name: ${inverter1} Limit Percent
-      limit_absolute:
-        id: ${inverter1}_limit_absolute
-        name: ${inverter1} Limit Absolute
-
-      dc_channels:
-        - !include {file: "../components/hoymiles_pv_channel.yaml", vars: {inverter: "${inverter1}", pv_n: "1"}}
-        - !include {file: "../components/hoymiles_pv_channel.yaml", vars: {inverter: "${inverter1}", pv_n: "2"}}
-        - !include {file: "../components/hoymiles_pv_channel.yaml", vars: {inverter: "${inverter1}", pv_n: "3"}}
-        - !include {file: "../components/hoymiles_pv_channel.yaml", vars: {inverter: "${inverter1}", pv_n: "4"}}
-
-      ac_channel:
-        power:
-          id: ${inverter1}_ac_power
-          name: ${inverter1} AC Power
-        voltage:
-          id: ${inverter1}_ac_voltage
-          name: ${inverter1} AC Voltage
-        current:
-          id: ${inverter1}_ac_current
-          name: ${inverter1} AC Current
-
-      inverter_channel:
-        power:
-          id: ${inverter1}_dc_power
-          name: ${inverter1} DC Power
-        energy:
-          id: ${inverter1}_dc_energy
-          name: ${inverter1} DC Energy Today
-          unit_of_measurement: "Wh"
-          device_class: energy
-          state_class: total_increasing
-          icon: mdi:counter
-        temperature:
-          id: ${inverter1}_temperature
-          name: ${inverter1} Temperature
+hms:
+  - id: ${inverter1}_hms
+    cmt2300a_id: cmt_radio
+    sn: !secret esphome_hoymiles_inverter_serial
+    frequency_band: eu_860
+    poll_interval: 1.2s
 
 sensor:
-  - platform: total_daily_energy
-    id: ${inverter1}_energy_today
-    name: ${inverter1} Energy Today
-    power_id: ${inverter1}_ac_power
-    unit_of_measurement: "Wh"
-    device_class: energy
-    state_class: total_increasing
-    accuracy_decimals: 0
-    method: trapezoid
+  - platform: hms
+    hms_id: ${inverter1}_hms
+    dc_channels:
+      - !include {file: "../components/hoymiles_pv_channel.yaml", vars: {inverter: "${inverter1}", pv_n: "1"}}
+      - !include {file: "../components/hoymiles_pv_channel.yaml", vars: {inverter: "${inverter1}", pv_n: "2"}}
+      - !include {file: "../components/hoymiles_pv_channel.yaml", vars: {inverter: "${inverter1}", pv_n: "3"}}
+      - !include {file: "../components/hoymiles_pv_channel.yaml", vars: {inverter: "${inverter1}", pv_n: "4"}}
+    ac:
+      voltage:
+        id: ${inverter1}_ac_voltage
+        name: ${inverter1} AC Voltage
+      current:
+        id: ${inverter1}_ac_current
+        name: ${inverter1} AC Current
+      power:
+        id: ${inverter1}_ac_power
+        name: ${inverter1} AC Power
+    inverter:
+      power:
+        id: ${inverter1}_dc_power
+        name: ${inverter1} DC Power
+      energy_today:
+        id: ${inverter1}_energy_today
+        name: ${inverter1} Energy Today
+      energy_total:
+        id: ${inverter1}_energy_total
+        name: ${inverter1} Energy Total
+      temperature:
+        id: ${inverter1}_temperature
+        name: ${inverter1} Temperature
+    rssi:
+      id: ${inverter1}_rssi
+      name: ${inverter1} RSSI
 
-script:
-  - id: ${inverter1}_rssi_watchdog
-    mode: restart
-    then:
-      - repeat:
-          count: 3
-          then:
-            - delay: 5min
-            - if:
-                condition:
-                  binary_sensor.is_on: ${inverter1}_reachable
-                then:
-                  - logger.log:
-                      level: WARN
-                      format: "RSSI silencieux depuis 5 min, redemarrage de l'onduleur"
-                  - button.press: ${inverter1}_restart
+binary_sensor:
+  - platform: hms
+    hms_id: ${inverter1}_hms
+    reachable:
+      id: ${inverter1}_reachable
+      name: ${inverter1} Reachable
+      on_press:
+        # Rallumage immédiat dès que l'onduleur revient (l'interval
+        # sert de filet de sécurité si ce front est manqué)
+        - globals.set:
+            id: screen_offline_counter
+            value: '0'
+        - lambda: 'id(oled).turn_on();'
+    producing:
+      id: ${inverter1}_producing
+      name: ${inverter1} Producing
+
+number:
+  - platform: hms
+    hms_id: ${inverter1}_hms
+    power_percent:
+      id: ${inverter1}_limit_percent
+      name: ${inverter1} Limit Percent
+    power_absolute:
+      id: ${inverter1}_limit_absolute
+      name: ${inverter1} Limit Absolute
+
+button:
+  - platform: hms
+    hms_id: ${inverter1}_hms
+    reset_hms:
+      id: ${inverter1}_reset_hms
+      name: ${inverter1} Reset Radio
+    reset_to_output_min:
+      id: ${inverter1}_reset_to_output_min
+      name: ${inverter1} Reset to 2%
+    reset_to_output_max:
+      id: ${inverter1}_reset_to_output_max
+      name: ${inverter1} Reset to 100%
+
+output:
+  - platform: hms
+    hms_id: ${inverter1}_hms
+    power_limit_percent:
+      id: ${inverter1}_power_limit_percent_output
