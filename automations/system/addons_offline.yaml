@@ -54,18 +54,13 @@ actions:
                 recipient: signal_system
                 title: ⚠️ Home Assistant - Add-on non relancé automatiquement
                 message: >-
-                  {% if repeat.item in restart_excluded_addons %}
-                  **{{ addon_name }}** (`{{ repeat.item }}`) est arrêté, mais son
-                  redémarrage automatique est exclu par configuration.
+                  **{{ addon_name }}** (`{{ repeat.item }}`) est arrêté, mais {{
+                    'son redémarrage automatique est exclu par configuration'
+                    if repeat.item in restart_excluded_addons else
+                    'il a déjà été relancé automatiquement il y a moins de '
+                    ~ restart_cooldown_hours ~ ' h sans se stabiliser' }}.
 
                   Une intervention manuelle est nécessaire.
-                  {% else %}
-                  **{{ addon_name }}** (`{{ repeat.item }}`) est arrêté, mais il a déjà
-                  été relancé automatiquement il y a moins de {{ restart_cooldown_hours }} h
-                  sans se stabiliser.
-
-                  Une intervention manuelle est nécessaire.
-                  {% endif %}
           else:
             - action: script.notification_management
               data:
