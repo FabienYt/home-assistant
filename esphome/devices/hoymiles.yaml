@@ -29,6 +29,10 @@ globals:
     type: uint16_t
     restore_value: no
     initial_value: '0'
+  - id: power_limit_watts
+    type: float
+    restore_value: no
+    initial_value: '2200.0'
 
 i2c:
   sda: GPIO21
@@ -123,6 +127,36 @@ interval:
             }
           }
 
+  - interval: 5s
+    then:
+      - lambda: |-
+          if (!id(${inverter1}_producing).state) {
+            return;
+          }
+
+          const float v = id(${inverter1}_ac_voltage).state;
+          const float p = id(${inverter1}_ac_power).state;
+          if (std::isnan(v) || std::isnan(p)) {
+            return;
+          }
+
+          // ~0.011 V/W measured on the line feeding the abri bois
+          float target;
+          if (v >= 249.0f) {
+            target = p - (v - 245.0f) / 0.011f;
+          } else if (v <= 243.0f) {
+            target = id(power_limit_watts) + 100.0f;
+          } else {
+            return;
+          }
+
+          target = roundf(std::min(2200.0f, std::max(300.0f, target)));
+          if (target == id(power_limit_watts)) {
+            return;
+          }
+          id(power_limit_watts) = target;
+          id(${inverter1}_limit_absolute).make_call().set_value(target).perform();
+
 external_components:
   - source: "github://SeByDocKy/myESPhome/"
     components: [cmt2300a, hms]
@@ -195,6 +229,7 @@ binary_sensor:
         - lambda: |-
             id(oled).turn_on();
             id(${inverter1}_hms).set_poll_interval(1200);
+            id(${inverter1}_limit_absolute).make_call().set_value(id(power_limit_watts)).perform();
       on_release:
         - lambda: 'id(${inverter1}_hms).set_poll_interval(10000);'
 
