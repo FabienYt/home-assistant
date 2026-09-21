@@ -30,6 +30,7 @@ automations.yaml                Automatisations gérées depuis l'interface
 automations/                    Automatisations écrites à la main, une par fichier, par catégorie
 ├── comfort/                    Confort de vie (éclairage, télécommandes…)
 ├── energy/                     Gestion de l'énergie (charge des VE…)
+├── household/                  Vie du foyer (poubelles…)
 ├── security/                   Alertes de sécurité (météo, fuite d'eau, fumée…)
 └── system/                     Maintenance de Home Assistant (sauvegardes, mises à jour…)
 scripts.yaml                    Scripts gérés depuis l'interface

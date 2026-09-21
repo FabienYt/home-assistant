@@ -15,6 +15,7 @@ variables:
   energy_entity: sensor.energy_yesterday
   solar_forecast_entity: sensor.energy_production_today
   solar_peak_entity: sensor.power_highest_peak_time_today
+  bin_calendar_entity: calendar.poubelles
 
   conditions_fr:
     clear-night: 🌙 Nuit claire
@@ -56,6 +57,14 @@ actions:
       type: daily
     response_variable: forecasts
 
+  - action: calendar.get_events
+    target:
+      entity_id: "{{ bin_calendar_entity }}"
+    data:
+      start_date_time: "{{ (today_at('00:00') + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S') }}"
+      end_date_time: "{{ (today_at('00:00') + timedelta(days=2)).strftime('%Y-%m-%d %H:%M:%S') }}"
+    response_variable: bin_agenda
+
   - variables:
       day: >-
         {{ forecasts[weather_entity].forecast
@@ -76,6 +85,7 @@ actions:
         {%- for risk, level in attrs.items() if level is string and level in alert_colors -%}
           {%- set ns.risks = ns.risks + [risk] -%}
         {%- endfor -%}
+        {%- set bin_event = bin_agenda[bin_calendar_entity].events | first | default(none) -%}
         {{ days_fr[now().weekday()] }} {{ now().day }} {{ months_fr[now().month - 1] }}
         {{ '​' }}
         {{ conditions_fr[day.condition] | default('🌡️ ' ~ day.condition | default('inconnu'), true) }}
@@ -84,6 +94,9 @@ actions:
         💨 Vent {{ day.wind_speed | default(0, true) | round(0) | int }} km/h
         🌅 {{ hm(state_attr('sun.sun', 'next_rising')) }} · 🌇 {{ hm(state_attr('sun.sun', 'next_setting')) }}
         {{ '🟢' if alert == 'Vert' else alert_colors[alert] | default('⚪', true) }} Vigilance {{ alert | lower }}{{ ' : ' ~ ns.risks | join(', ') if ns.risks else '' }}
+        {%- if bin_event %}
+        {{ '🟡' if 'jaune' in bin_event.summary | lower else '⚫' if 'gris' in bin_event.summary | lower else '🗑️' }} {{ bin_event.summary | replace('Ramassage - ', '') }} ramassée demain
+        {%- endif %}
 
         🔆 Solaire
         ⚡ Hier : {{ nb(state_attr(energy_entity, 'solar_kwh')) }} kWh produits
