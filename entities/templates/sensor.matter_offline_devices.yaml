@@ -5,26 +5,32 @@ sensor:
     unique_id: 'da9b1b52-a064-45d8-bb93-079e27425934'
 
     state: >-
-      {{ expand(integration_entities('matter'))
-         | rejectattr('domain', 'eq', 'update')
-         | selectattr('state', 'eq', 'unavailable')
-         | map(attribute='entity_id')
-         | map('device_id')
-         | reject('none')
-         | unique
-         | list
-         | count }}
+      {%- set listed = this.attributes.devices | default([], true) if this is defined else [] -%}
+      {%- set ns = namespace(devices=[]) -%}
+      {%- for s in expand(integration_entities('matter'))
+                    | rejectattr('domain', 'eq', 'update')
+                    | selectattr('state', 'eq', 'unavailable') -%}
+        {%- set device = device_id(s.entity_id) -%}
+        {%- if device is not none
+               and (device in listed
+                    or now() - s.last_changed > timedelta(minutes=5)) -%}
+          {%- set ns.devices = ns.devices + [device] -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {{ ns.devices | unique | list | count }}
 
     attributes:
       devices: >-
-        {{ expand(integration_entities('matter'))
-           | rejectattr('domain', 'eq', 'update')
-           | selectattr('state', 'eq', 'unavailable')
-           | map(attribute='entity_id')
-           | map('device_id')
-           | reject('none')
-           | unique
-           | list
-           | sort }}
-
-    availability: '{{ integration_entities("matter") | count > 0 }}'
+        {%- set listed = this.attributes.devices | default([], true) if this is defined else [] -%}
+        {%- set ns = namespace(devices=[]) -%}
+        {%- for s in expand(integration_entities('matter'))
+                      | rejectattr('domain', 'eq', 'update')
+                      | selectattr('state', 'eq', 'unavailable') -%}
+          {%- set device = device_id(s.entity_id) -%}
+          {%- if device is not none
+                 and (device in listed
+                      or now() - s.last_changed > timedelta(minutes=5)) -%}
+            {%- set ns.devices = ns.devices + [device] -%}
+          {%- endif -%}
+        {%- endfor -%}
+        {{ ns.devices | unique | list | sort }}

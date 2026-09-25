@@ -5,36 +5,36 @@ sensor:
     unique_id: '28c7d178-9755-41a0-925c-1c232b5099de'
 
     state: >-
+      {%- set listed = this.attributes.devices | default([], true) if this is defined else [] -%}
       {%- set ns = namespace(devices=[]) -%}
-      {%- for d in expand(integration_entities('mqtt'))
+      {%- for s in expand(integration_entities('mqtt'))
                     | rejectattr('domain', 'eq', 'update')
-                    | selectattr('state', 'eq', 'unavailable')
-                    | map(attribute='entity_id')
-                    | map('device_id')
-                    | reject('none')
-                    | unique
-                    | list -%}
-        {%- if device_attr(d, 'via_device_id') is not none -%}
-          {%- set ns.devices = ns.devices + [d] -%}
+                    | selectattr('state', 'eq', 'unavailable') -%}
+        {%- set device = device_id(s.entity_id) -%}
+        {%- if device is not none
+               and device_attr(device, 'via_device_id') is not none
+               and (device in listed
+                    or now() - s.last_changed > timedelta(minutes=5)) -%}
+          {%- set ns.devices = ns.devices + [device] -%}
         {%- endif -%}
       {%- endfor -%}
-      {{ ns.devices | count }}
+      {{ ns.devices | unique | list | count }}
 
     attributes:
       devices: >-
+        {%- set listed = this.attributes.devices | default([], true) if this is defined else [] -%}
         {%- set ns = namespace(devices=[]) -%}
-        {%- for d in expand(integration_entities('mqtt'))
+        {%- for s in expand(integration_entities('mqtt'))
                       | rejectattr('domain', 'eq', 'update')
-                      | selectattr('state', 'eq', 'unavailable')
-                      | map(attribute='entity_id')
-                      | map('device_id')
-                      | reject('none')
-                      | unique
-                      | list -%}
-          {%- if device_attr(d, 'via_device_id') is not none -%}
-            {%- set ns.devices = ns.devices + [d] -%}
+                      | selectattr('state', 'eq', 'unavailable') -%}
+          {%- set device = device_id(s.entity_id) -%}
+          {%- if device is not none
+                 and device_attr(device, 'via_device_id') is not none
+                 and (device in listed
+                      or now() - s.last_changed > timedelta(minutes=5)) -%}
+            {%- set ns.devices = ns.devices + [device] -%}
           {%- endif -%}
         {%- endfor -%}
-        {{ ns.devices | sort }}
+        {{ ns.devices | unique | list | sort }}
 
-    availability: '{{ integration_entities("mqtt") | count > 0 }}'
+    availability: "{{ is_state('binary_sensor.zigbee2mqtt_bridge_connection_state', 'on') }}"
