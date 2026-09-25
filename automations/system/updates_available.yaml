@@ -22,16 +22,18 @@ actions:
     then:
       - delay: '00:01:00'
 
-  - condition: numeric_state
-    entity_id: sensor.updates_available
-    above: 0
+  - variables:
+      updates: "{{ state_attr('sensor.updates_available', 'updates') or [] }}"
+
+  - condition: template
+    value_template: '{{ updates | count > 0 }}'
 
   - action: script.notification_management
     data:
       recipient: signal_system
       title: 🆕 Home Assistant - Mise(s) à jour disponible(s)
       message: |-
-        {% for update in state_attr('sensor.updates_available', 'updates') -%}
+        {% for update in updates -%}
         {%- set device = device_id(update) -%}
         {%- set name = (device_attr(device, 'name_by_user') or device_attr(device, 'name'))
                        if device
