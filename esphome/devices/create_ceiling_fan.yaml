@@ -1,0 +1,43 @@
+---
+substitutions:
+  logger_level: INFO
+
+packages:
+  <<: !include_dir_named ../common
+
+  board: !include ../boards/esp32_c3.yaml
+
+  wifi: !include ../components/wifi.yaml
+
+uart:
+  rx_pin: GPIO20
+  tx_pin: GPIO21
+  baud_rate: 9600
+  debug:
+
+tuya:
+  id: "tuya_device"
+  time_id: time_homeassistant
+
+fan:
+  - platform: "tuya"
+    id: fan_device
+    name: "Fan"
+    switch_datapoint: 60
+    speed_datapoint: 62
+    direction_datapoint: 63
+    speed_count: 6
+    restore_mode: ALWAYS_OFF
+
+light:
+  - platform: "tuya"
+    id: light_device
+    name: "Light"
+    switch_datapoint: 20
+    restore_mode: ALWAYS_OFF
+    # color_temperature_datapoint: 23
+    # warm_white_color_temperature: 500 mireds
+    # cold_white_color_temperature: 153 mireds
+    # color_temperature_max_value: 500
+    dimmer_datapoint: 22
+    max_value: 1000

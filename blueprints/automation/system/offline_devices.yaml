@@ -1,0 +1,104 @@
+---
+blueprint:
+  name: Appareils hors ligne
+  description: >-
+    Notifie quand des appareils d'une intégration deviennent inaccessibles et
+    quand ils se rétablissent, à partir d'un capteur exposant la liste des
+    appareils hors ligne dans son attribut `devices`.
+  domain: automation
+  input:
+    integration_name:
+      name: Nom de l'intégration
+      default: Appareils
+    entity_id:
+      name: Capteur source
+      selector:
+        entity:
+          domain: sensor
+    recipient:
+      name: Canal de notification
+      selector:
+        select:
+          options:
+            - signal_house
+            - signal_system
+      default: signal_house
+    startup_notify:
+      name: Notifier au démarrage
+      default: true
+      selector:
+        boolean:
+    startup_wait:
+      name: Délai de reconnexion (min)
+      default: 3
+      selector:
+        number:
+          min: 0
+          max: 30
+
+variables:
+  integration_name: !input integration_name
+  entity_id: !input entity_id
+  recipient: !input recipient
+  startup_notify: !input startup_notify
+  startup_wait: !input startup_wait
+
+triggers:
+  - trigger: homeassistant
+    event: start
+    id: startup
+  - trigger: state
+    entity_id: !input entity_id
+    attribute: devices
+    id: change
+
+conditions:
+  - condition: template
+    value_template: >-
+      {{ trigger.id == 'startup'
+         or (trigger.from_state is not none
+             and trigger.to_state is not none
+             and trigger.from_state.state not in ['unavailable', 'unknown']
+             and trigger.to_state.state not in ['unavailable', 'unknown']) }}
+
+actions:
+  - if:
+      - condition: trigger
+        id: startup
+    then:
+      - delay:
+          minutes: '{{ startup_wait | int }}'
+
+  - variables:
+      previous: >-
+        {% if trigger.id == 'startup' %}
+          {{ [] }}
+        {% else %}
+          {{ trigger.from_state.attributes.devices | default([], true) }}
+        {% endif %}
+      current: >-
+        {% if trigger.id == 'startup' %}
+          {{ state_attr(entity_id, 'devices') | default([], true) }}
+        {% else %}
+          {{ trigger.to_state.attributes.devices | default([], true) }}
+        {% endif %}
+      went_offline: '{{ current | reject("in", previous) | list }}'
+      recovered: '{{ previous | reject("in", current) | list }}'
+
+  - repeat:
+      for_each: >-
+        {{ [{'title': '🆘 ' ~ integration_name ~ ' - Appareil(s) hors ligne',
+             'devices': went_offline if (trigger.id != 'startup' or startup_notify) else []},
+            {'title': '✅ ' ~ integration_name ~ ' - Appareil(s) rétabli(s)',
+             'devices': recovered if trigger.id != 'startup' else []}]
+           | selectattr('devices') | list }}
+      sequence:
+        - action: script.notification_management
+          data:
+            recipient: '{{ recipient }}'
+            title: '{{ repeat.item.title }}'
+            message: |-
+              {% for device in repeat.item.devices -%}
+              {%- set area = area_name(device) -%}
+              - **{{ device_attr(device, 'name_by_user') or device_attr(device, 'name') }}**{{ ' *(' ~ area ~ ')*' if area else '' }}
+              {% endfor %}

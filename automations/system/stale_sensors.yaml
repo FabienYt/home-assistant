@@ -1,0 +1,86 @@
+---
+id: stale_sensors
+alias: Capteurs - Données figées
+description: ''
+
+triggers:
+  - trigger: state
+    entity_id: sensor.stale_sensors
+    attribute: sensors
+    id: change
+
+variables:
+  stale_excluded_sensors: []
+
+conditions:
+  - condition: template
+    value_template: >-
+      {{ trigger.to_state is not none
+         and trigger.to_state.state not in ['unavailable', 'unknown'] }}
+
+actions:
+  - variables:
+      previous: >-
+        {%- set raw = trigger.from_state.attributes.sensors | default([], true)
+            if trigger.from_state is not none
+               and trigger.from_state.state not in ['unavailable', 'unknown']
+            else [] -%}
+        {%- set ns = namespace(kept=[]) -%}
+        {%- for sensor in raw -%}
+          {%- set device = device_id(sensor) -%}
+          {%- set device_name = (device_attr(device, 'name_by_user') or device_attr(device, 'name'))
+                                if device else none -%}
+          {%- if sensor not in stale_excluded_sensors
+                and device_name not in stale_excluded_sensors -%}
+            {%- set ns.kept = ns.kept + [sensor] -%}
+          {%- endif -%}
+        {%- endfor -%}
+        {{ ns.kept }}
+      current: >-
+        {%- set raw = trigger.to_state.attributes.sensors | default([], true) -%}
+        {%- set ns = namespace(kept=[]) -%}
+        {%- for sensor in raw -%}
+          {%- set device = device_id(sensor) -%}
+          {%- set device_name = (device_attr(device, 'name_by_user') or device_attr(device, 'name'))
+                                if device else none -%}
+          {%- if sensor not in stale_excluded_sensors
+                and device_name not in stale_excluded_sensors -%}
+            {%- set ns.kept = ns.kept + [sensor] -%}
+          {%- endif -%}
+        {%- endfor -%}
+        {{ ns.kept }}
+      went_stale: '{{ current | reject("in", previous) | list }}'
+      recovered: '{{ previous | reject("in", current) | list }}'
+
+  - repeat:
+      for_each: >-
+        {{ [{'title': '🔇 Home Assistant - Capteur(s) sans données',
+             'sensors': went_stale, 'stale': true},
+            {'title': '✅ Home Assistant - Capteur(s) de nouveau actifs',
+             'sensors': recovered, 'stale': false}]
+           | selectattr('sensors') | list }}
+      sequence:
+        - action: script.notification_management
+          data:
+            recipient: signal_system
+            title: '{{ repeat.item.title }}'
+            message: |-
+              {% for sensor in repeat.item.sensors -%}
+              {%- set area = area_name(sensor) -%}
+              {%- set device = device_id(sensor) -%}
+              {%- set device_name = (device_attr(device, 'name_by_user') or device_attr(device, 'name'))
+                                    if device else none -%}
+              {%- set label = state_attr(sensor, 'friendly_name') or sensor -%}
+              {%- set label = (label | replace(device_name, '') | trim) if device_name else label -%}
+              {%- set age = '' -%}
+              {%- if repeat.item.stale and states[sensor] is not none -%}
+                {%- set hours = ((now() - states[sensor].last_reported).total_seconds() / 3600)
+                    | round(1) | string | replace('.', ',') -%}
+                {%- set age = ' (muet depuis ' ~ hours ~ ' h)' -%}
+              {%- endif -%}
+              - **{{ device_name or label }}**{{ ' *(' ~ area ~ ')*' if area else '' }}{{
+                  ' : ' ~ label if device_name and label else '' }}{{ age }}
+              {% endfor %}
+
+mode: single
+max_exceeded: silent

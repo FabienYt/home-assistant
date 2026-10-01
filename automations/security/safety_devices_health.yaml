@@ -1,0 +1,95 @@
+---
+id: safety_devices_health
+alias: Détecteurs - Défaut, fin de service ou sourdine
+description: ''
+
+triggers:
+  - trigger: homeassistant
+    event: start
+    id: refresh
+  - trigger: event
+    event_type: automation_reloaded
+    id: refresh
+  - trigger: time
+    at: '09:00:00'
+    id: daily
+  - trigger: template
+    value_template: >-
+      {{ states.binary_sensor
+         | selectattr('attributes.device_class', 'eq', 'problem')
+         | selectattr('state', 'eq', 'on') | list | count > 0 }}
+    id: problem
+  - trigger: template
+    value_template: >-
+      {{ states.binary_sensor
+         | selectattr('entity_id', 'search', '_en_sourdine')
+         | selectattr('state', 'eq', 'on') | list | count > 0 }}
+    for: '00:15:00'
+    id: muted
+
+variables:
+  detector_excluded_devices: []
+
+actions:
+  - alias: Attente de la remontée des états au démarrage
+    if:
+      - condition: trigger
+        id: refresh
+    then:
+      - delay: '00:01:00'
+
+  - variables:
+      problems: >-
+        {% set ns = namespace(detectors=[]) %}
+        {% for detector in states.binary_sensor
+           | selectattr('attributes.device_class', 'eq', 'problem')
+           | selectattr('state', 'eq', 'on') %}
+          {% set device = device_id(detector.entity_id) %}
+          {% set device_name = (device_attr(device, 'name_by_user') or device_attr(device, 'name'))
+                               if device else none %}
+          {% if detector.entity_id not in detector_excluded_devices
+                and device_name not in detector_excluded_devices %}
+            {% set ns.detectors = ns.detectors + [{'entity_id': detector.entity_id}] %}
+          {% endif %}
+        {% endfor %}
+        {{ ns.detectors }}
+      muted: >-
+        {% set ns = namespace(detectors=[]) %}
+        {% for detector in states.binary_sensor
+           | selectattr('entity_id', 'search', '_en_sourdine')
+           | selectattr('state', 'eq', 'on') %}
+          {% set device = device_id(detector.entity_id) %}
+          {% set device_name = (device_attr(device, 'name_by_user') or device_attr(device, 'name'))
+                               if device else none %}
+          {% if detector.entity_id not in detector_excluded_devices
+                and device_name not in detector_excluded_devices
+                and now() - detector.last_changed > timedelta(minutes=15) %}
+            {% set ns.detectors = ns.detectors + [{'entity_id': detector.entity_id}] %}
+          {% endif %}
+        {% endfor %}
+        {{ ns.detectors }}
+
+  - repeat:
+      for_each: >-
+        {{ [{'title': '🚨 Détecteurs - Défaut ou fin de service', 'detectors': problems},
+            {'title': '🔕 Détecteurs - Sourdine prolongée', 'detectors': muted}]
+           | selectattr('detectors') | list }}
+      sequence:
+        - action: script.notification_management
+          data:
+            recipient: signal_house
+            title: '{{ repeat.item.title }}'
+            message: |-
+              {% for detector in repeat.item.detectors -%}
+              {%- set area = area_name(detector.entity_id) -%}
+              {%- set device = device_id(detector.entity_id) -%}
+              {%- set device_name = (device_attr(device, 'name_by_user') or device_attr(device, 'name'))
+                                    if device else none -%}
+              {%- set label = state_attr(detector.entity_id, 'friendly_name') or detector.entity_id -%}
+              {%- set label = (label | replace(device_name, '') | trim) if device_name else label -%}
+              - **{{ device_name or label }}**{{ ' *(' ~ area ~ ')*' if area else '' }}{{
+                  ' : ' ~ label if device_name and label else '' }}
+              {% endfor %}
+
+mode: single
+max_exceeded: silent

@@ -1,0 +1,38 @@
+---
+id: bin_collection
+alias: Poubelles - Rappel de ramassage
+description: ''
+
+triggers:
+  - trigger: time
+    at: "18:00:00"
+
+conditions: []
+
+variables:
+  calendar_entity: calendar.poubelles
+
+actions:
+  - action: calendar.get_events
+    target:
+      entity_id: "{{ calendar_entity }}"
+    data:
+      start_date_time: "{{ (today_at('00:00') + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S') }}"
+      end_date_time: "{{ (today_at('00:00') + timedelta(days=2)).strftime('%Y-%m-%d %H:%M:%S') }}"
+    response_variable: agenda
+
+  - if:
+      - condition: template
+        value_template: "{{ agenda[calendar_entity].events | count > 0 }}"
+    then:
+      - action: script.notification_management
+        data:
+          recipient: signal_house
+          title: 🗑️ Poubelles - Ramassage demain
+          message: >-
+            {%- set bin_event = agenda[calendar_entity].events | first -%}
+            {{ '🟡' if 'jaune' in bin_event.summary | lower
+               else '⚫' if 'gris' in bin_event.summary | lower else '🗑️' }}
+            {{ bin_event.summary | replace('Ramassage - ', '') }} à sortir ce soir.
+
+mode: single

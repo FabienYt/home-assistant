@@ -1,0 +1,46 @@
+---
+sensor:
+  - default_entity_id: sensor.stale_sensors
+    name: Capteurs - Données figées
+    unique_id: '430c62ff-eade-4ca9-8432-4b0c1907cfc8'
+
+    state: >-
+      {%- set stale_thresholds = {'apparent_power': 20, 'current': 20} -%}
+      {%- set stale_thresholds_min = {'Hoymiles': 1440, 'Cellier - Interrupteur - Chargeur des VE': 1440} -%}
+      {%- set ns = namespace(sensors=[]) -%}
+      {%- for s in expand(integration_entities('esphome') + integration_entities('mqtt'))
+                    | selectattr('domain', 'eq', 'sensor')
+                    | rejectattr('state', 'in', ['unavailable', 'unknown'])
+                    | rejectattr('attributes.device_class', 'eq', 'timestamp')
+                    | rejectattr('attributes.device_class', 'in', ['battery', 'precipitation', 'precipitation_intensity'])
+                    | rejectattr('entity_id', 'search', '(_version|_uptime|_ip_address|_linkquality|_last_seen|_memory_(heap|psram)_(free|largest_block)|_screen_(active_timezone|date)|_network_map|_ws90_voltage|_ws90_capacitor_voltage)$') -%}
+        {%- set device_name = device_attr(device_id(s.entity_id), 'name') if device_id(s.entity_id) else none -%}
+        {%- set threshold = [stale_thresholds.get(s.attributes.device_class, 1440), stale_thresholds_min.get(device_name, 0)] | max -%}
+        {%- if now() - s.last_reported > timedelta(minutes=threshold) -%}
+          {%- set ns.sensors = ns.sensors + [s.entity_id] -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {{ ns.sensors | count }}
+
+    attributes:
+      sensors: >-
+        {%- set stale_thresholds = {'apparent_power': 20, 'current': 20} -%}
+        {%- set stale_thresholds_min = {'Hoymiles': 1440, 'Cellier - Interrupteur - Chargeur des VE': 1440} -%}
+        {%- set ns = namespace(sensors=[]) -%}
+        {%- for s in expand(integration_entities('esphome') + integration_entities('mqtt'))
+                      | selectattr('domain', 'eq', 'sensor')
+                      | rejectattr('state', 'in', ['unavailable', 'unknown'])
+                      | rejectattr('attributes.device_class', 'eq', 'timestamp')
+                      | rejectattr('attributes.device_class', 'in', ['battery', 'precipitation', 'precipitation_intensity'])
+                      | rejectattr('entity_id', 'search', '(_version|_uptime|_ip_address|_linkquality|_last_seen|_memory_(heap|psram)_(free|largest_block)|_screen_(active_timezone|date)|_network_map|_ws90_voltage|_ws90_capacitor_voltage)$') -%}
+          {%- set device_name = device_attr(device_id(s.entity_id), 'name') if device_id(s.entity_id) else none -%}
+          {%- set threshold = [stale_thresholds.get(s.attributes.device_class, 1440), stale_thresholds_min.get(device_name, 0)] | max -%}
+          {%- if now() - s.last_reported > timedelta(minutes=threshold) -%}
+            {%- set ns.sensors = ns.sensors + [s.entity_id] -%}
+          {%- endif -%}
+        {%- endfor -%}
+        {{ ns.sensors | sort }}
+
+    availability: >-
+      {{ integration_entities('esphome') | count > 0
+         or integration_entities('mqtt') | count > 0 }}

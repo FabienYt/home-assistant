@@ -1,0 +1,18 @@
+---
+# Uptime Timestamp Sensor: https://github.com/frenck/home-assistant-config/blob/master/esphome/sensors/uptime_timestamp.yaml
+#
+platform: template
+id: sensor_uptime_timestamp
+name: "${name} Uptime"
+
+accuracy_decimals: 0
+device_class: timestamp
+entity_category: diagnostic
+icon: mdi:clock-start
+update_interval: never
+
+lambda: |-
+  static float timestamp = (
+    id(${time_id}).utcnow().timestamp - id(sensor_uptime).state
+  );
+  return timestamp;

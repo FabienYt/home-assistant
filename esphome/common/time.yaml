@@ -1,0 +1,18 @@
+---
+# Time: https://esphome.io/components/time/
+#
+substitutions:
+  time_id: "time_homeassistant"
+  time_timezone: "Europe/Paris"
+
+time:
+  - platform: homeassistant
+    id: "${time_id}"
+
+    timezone: "${time_timezone}"
+    on_time_sync:
+      - component.update: sensor_uptime_timestamp
+
+sensor:
+  - <<: !include ../sensors/uptime.yaml
+  - <<: !include ../sensors/uptime_timestamp.yaml

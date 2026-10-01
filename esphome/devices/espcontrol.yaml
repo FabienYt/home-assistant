@@ -1,0 +1,23 @@
+---
+substitutions:
+  disable_updates: "true"
+  logger_level: DEBUG
+  network_transport: ethernet
+  ota_password: !secret esphome_ota_password
+  slug: ${name}
+  web_server_local: false
+
+packages:
+  setup:
+    file: devices/${device}/packages.yaml
+    ref: main
+    refresh: 0s
+    url: https://github.com/jtenniswood/espcontrol
+
+
+  <<: !include_dir_named ../common
+
+esp32:
+  framework:
+    version: recommended
+    platform_version: !remove

@@ -1,0 +1,24 @@
+---
+substitutions:
+  wifi_ap_ssid: "AP - ${name}"
+
+# Captive Portal: https://esphome.io/components/captive_portal.html
+captive_portal:
+
+# WiFi Component: https://esphome.io/components/wifi.html
+wifi:
+  ssid: !secret esphome_wifi_ssid
+  password: !secret esphome_wifi_password
+
+  power_save_mode: none
+
+  min_auth_mode: WPA2
+
+  ap:
+    ssid: "${wifi_ap_ssid}"
+    password: !secret esphome_wifi_ap_password
+
+sensor:
+  - platform: wifi_signal
+    name: "${name} WiFi Signal"
+    update_interval: 60s

@@ -1,0 +1,18 @@
+---
+id: esphome_offline_devices
+alias: ESPHome - Appareils hors ligne
+description: ''
+initial_state: false
+
+use_blueprint:
+  path: system/offline_devices.yaml
+  input:
+    integration_name: ESPHome
+    entity_id: sensor.esphome_offline_devices
+    recipient: signal_house
+    startup_notify: false
+    startup_wait: 3
+
+mode: parallel
+max: 10
+max_exceeded: silent

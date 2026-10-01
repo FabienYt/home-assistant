@@ -1,0 +1,10 @@
+---
+sensor:
+  - default_entity_id: sensor.updates_available
+    name: Mise à jour disponible
+    unique_id: '8b7ec5b4-0c29-4162-a30b-0fd4b277d95d'
+
+    state: '{{ states.update | selectattr("state", "eq", "on") | list  | count }}'
+
+    attributes:
+      updates: '{{ states.update | selectattr("state", "eq", "on") | map(attribute="entity_id") | list | sort }}'

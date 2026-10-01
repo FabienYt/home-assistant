@@ -1,0 +1,20 @@
+---
+binary_sensor:
+  - default_entity_id: binary_sensor.safety_monitored
+    name: Sécurité - Capteurs surveillés
+    unique_id: '6d3f1cf9-e5f4-4494-aba2-0628089d7c70'
+
+    device_class: safety
+
+    state: >-
+      {% set monitored = this.attributes.monitored | default([], true) %}
+      {{ expand(monitored) | selectattr('state', 'eq', 'on') | list | count > 0 }}
+
+    attributes:
+      monitored: >-
+        {{ ['binary_sensor.cellier_capteur_de_fuites_d_eau_klippbok_fuite_d_eau',
+            'binary_sensor.cellier_capteur_de_monoxyde_de_carbone_heiman_monoxyde_de_carbone',
+            'binary_sensor.entree_detecteur_de_fumee_heiman_fumee'] }}
+      active: >-
+        {% set monitored = this.attributes.monitored | default([], true) %}
+        {{ expand(monitored) | selectattr('state', 'eq', 'on') | map(attribute='entity_id') | list }}

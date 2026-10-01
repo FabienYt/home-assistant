@@ -1,0 +1,10 @@
+---
+substitutions:
+  slug: bluetooth-proxy
+  name: "Proxy Bluetooth"
+
+  api_encryption_key: !secret esphome_bluetooth_proxy_api_encryption_key
+  logger_level: INFO
+
+packages:
+  device: !include devices/waveshare_esp32_s3_eth.yaml

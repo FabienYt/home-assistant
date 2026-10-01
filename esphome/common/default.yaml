@@ -1,0 +1,6 @@
+---
+binary_sensor:
+  - <<: !include ../binary_sensors/status.yaml
+
+text_sensor:
+  - <<: !include ../text_sensors/version.yaml

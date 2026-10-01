@@ -1,0 +1,6 @@
+---
+# Version Text Sensor: https://esphome.io/components/text_sensor/version/
+#
+platform: version
+id: text_sensor_version
+name: "${name} ESPHome Version"

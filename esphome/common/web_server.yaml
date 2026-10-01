@@ -1,0 +1,17 @@
+---
+# Web Server: https://esphome.io/components/web_server/
+#
+substitutions:
+  web_server_password: !secret esphome_web_server_password
+  web_server_username: !secret esphome_web_server_username
+  web_server_local: true
+
+web_server:
+  id: component_web_server
+
+  auth:
+    username: "${web_server_username}"
+    password: "${web_server_password}"
+    type: digest
+  local: ${web_server_local}
+  port: 80

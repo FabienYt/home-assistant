@@ -1,0 +1,10 @@
+---
+# Core Configuration: https://esphome.io/components/esphome/
+#
+#
+substitutions:
+  friendly_name: "${name}"
+
+esphome:
+  name: "${slug}"
+  friendly_name: "${friendly_name}"

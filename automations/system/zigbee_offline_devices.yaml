@@ -1,0 +1,17 @@
+---
+id: zigbee_offline_devices
+alias: Zigbee - Appareils hors ligne
+description: ''
+
+use_blueprint:
+  path: system/offline_devices.yaml
+  input:
+    integration_name: Zigbee
+    entity_id: sensor.zigbee_offline_devices
+    recipient: signal_house
+    startup_notify: true
+    startup_wait: 3
+
+mode: parallel
+max: 10
+max_exceeded: silent

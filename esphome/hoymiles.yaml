@@ -1,0 +1,15 @@
+---
+substitutions:
+  slug: hoymiles
+  name: Hoymiles
+
+  api_encryption_key: !secret esphome_hoymiles_api_encryption_key
+  logger_level: INFO
+
+packages:
+  device: !include devices/hoymiles.yaml
+
+# Temporary override while the API stalls and reboots are diagnosed: the shared
+# logger sets baud_rate 0, which discards crash backtraces.
+logger:
+  baud_rate: 115200

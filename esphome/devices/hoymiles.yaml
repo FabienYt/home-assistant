@@ -1,0 +1,283 @@
+---
+substitutions:
+  logger_level: INFO
+
+  inverter1: Abris_bois
+
+packages:
+  <<: !include_dir_named ../common
+
+  wifi: !include ../components/wifi.yaml
+
+api:
+  batch_delay: 50ms
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+    advanced:
+      minimum_chip_revision: "3.1"
+      sram1_as_iram: true
+
+debug:
+  update_interval: 30s
+
+globals:
+  - id: screen_offline_counter
+    type: uint16_t
+    restore_value: no
+    initial_value: '0'
+  - id: radio_reset_counter
+    type: uint16_t
+    restore_value: no
+    initial_value: '0'
+  - id: power_limit_watts
+    type: float
+    restore_value: no
+    initial_value: '1200.0'
+
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+  frequency: 400kHz
+  scan: true
+
+font:
+  - file:
+      type: gfonts
+      family: Roboto
+      weight: bold
+    id: font_power
+    size: 24
+  - file:
+      type: gfonts
+      family: Roboto
+      weight: medium
+    id: font_details
+    size: 12
+
+display:
+  - platform: ssd1306_i2c
+    model: "SH1106 128x64"
+    address: 0x3C
+    id: oled
+    rotation: 180°
+    lambda: |-
+      const bool online = id(${inverter1}_reachable).state;
+
+      if (online && id(${inverter1}_ac_power).has_state()) {
+        it.printf(64, 0, id(font_power), TextAlign::TOP_CENTER, "%.0f W", id(${inverter1}_ac_power).state);
+      } else {
+        it.print(64, 0, id(font_power), TextAlign::TOP_CENTER, "--- W");
+      }
+
+      if (std::isnan(id(${inverter1}_energy_today).state)) {
+        it.print(0, 30, id(font_details), TextAlign::TOP_LEFT, "Aujourd'hui : --- Wh");
+      } else {
+        it.printf(0, 30, id(font_details), TextAlign::TOP_LEFT, "Aujourd'hui : %.0f Wh", id(${inverter1}_energy_today).state);
+      }
+
+      if (online) {
+        if (std::isnan(id(${inverter1}_ac_voltage).state)) {
+          it.print(0, 48, id(font_details), TextAlign::TOP_LEFT, "--- V");
+        } else {
+          it.printf(0, 48, id(font_details), TextAlign::TOP_LEFT, "%.0f V", id(${inverter1}_ac_voltage).state);
+        }
+
+        if (std::isnan(id(${inverter1}_ac_current).state)) {
+          it.print(64, 48, id(font_details), TextAlign::TOP_CENTER, "--- A");
+        } else {
+          it.printf(64, 48, id(font_details), TextAlign::TOP_CENTER, "%.2f A", id(${inverter1}_ac_current).state);
+        }
+
+        const float pac = id(${inverter1}_ac_power).state;
+        const float pdc = id(${inverter1}_dc_power).state;
+        if (!std::isnan(pac) && !std::isnan(pdc) && pdc > 10.0f) {
+          const float eff = std::min(100.0f, std::max(0.0f, pac / pdc * 100.0f));
+          it.printf(127, 48, id(font_details), TextAlign::TOP_RIGHT, "%.0f %%", eff);
+        } else {
+          it.print(127, 48, id(font_details), TextAlign::TOP_RIGHT, "--- %");
+        }
+      } else {
+        it.print(64, 48, id(font_details), TextAlign::TOP_CENTER, "Onduleur hors ligne");
+      }
+
+interval:
+  - interval: 30s
+    then:
+      - lambda: |-
+          bool reachable = id(${inverter1}_reachable).state;
+          bool active = reachable && id(${inverter1}_producing).state;
+
+          if (active) {
+            if (id(screen_offline_counter) != 0) {
+              id(screen_offline_counter) = 0;
+              id(oled).turn_on();
+            }
+          } else if (id(screen_offline_counter) < 10) {
+            id(screen_offline_counter)++;
+            if (id(screen_offline_counter) == 10) {
+              id(oled).turn_off();
+            }
+          }
+
+          if (reachable) {
+            id(radio_reset_counter) = 0;
+          } else {
+            id(radio_reset_counter)++;
+            if (id(radio_reset_counter) == 1 || id(radio_reset_counter) % 10 == 0) {
+              id(${inverter1}_reset_hms).press();
+            }
+          }
+
+  - interval: 5s
+    then:
+      - lambda: |-
+          if (!id(${inverter1}_producing).state) {
+            return;
+          }
+
+          const float v = id(${inverter1}_ac_voltage).state;
+          const float p = id(${inverter1}_ac_power).state;
+          if (std::isnan(v) || std::isnan(p)) {
+            return;
+          }
+
+          // ~0.011 V/W measured on the line feeding the abri bois
+          float target;
+          if (v >= 249.0f) {
+            target = p - (v - 245.0f) / 0.011f;
+          } else if (v <= 243.0f) {
+            // Track actual output so a sudden sun burst cannot overshoot
+            target = std::min(id(power_limit_watts) + 100.0f, p + 300.0f);
+          } else {
+            return;
+          }
+
+          target = roundf(std::min(2200.0f, std::max(300.0f, target)));
+          if (fabsf(target - id(power_limit_watts)) < 50.0f) {
+            return;
+          }
+          id(power_limit_watts) = target;
+          id(${inverter1}_limit_absolute).make_call().set_value(target).perform();
+
+external_components:
+  - source: "github://SeByDocKy/myESPhome/"
+    components: [cmt2300a, hms]
+    refresh: 10s
+
+cmt2300a:
+  id: cmt_radio
+  clk_pin: GPIO18
+  sdio_pin: GPIO23
+  cs_pin: GPIO4
+  fcs_pin:
+    number: GPIO5
+    ignore_strapping_warning: true
+
+hms:
+  - id: ${inverter1}_hms
+    cmt2300a_id: cmt_radio
+    sn: !secret esphome_hoymiles_inverter_serial
+    frequency_band: eu_860
+    poll_interval: 1.5s
+
+sensor:
+  - platform: hms
+    hms_id: ${inverter1}_hms
+    dc_channels:
+      - !include {file: "../components/hoymiles_pv_channel.yaml", vars: {inverter: "${inverter1}", pv_n: "1"}}
+      - !include {file: "../components/hoymiles_pv_channel.yaml", vars: {inverter: "${inverter1}", pv_n: "2"}}
+      - !include {file: "../components/hoymiles_pv_channel.yaml", vars: {inverter: "${inverter1}", pv_n: "3"}}
+      - !include {file: "../components/hoymiles_pv_channel.yaml", vars: {inverter: "${inverter1}", pv_n: "4"}}
+    ac:
+      voltage:
+        id: ${inverter1}_ac_voltage
+        name: ${inverter1} AC Voltage
+      current:
+        id: ${inverter1}_ac_current
+        name: ${inverter1} AC Current
+      power:
+        id: ${inverter1}_ac_power
+        name: ${inverter1} AC Power
+    inverter:
+      power:
+        id: ${inverter1}_dc_power
+        name: ${inverter1} DC Power
+      energy_today:
+        id: ${inverter1}_energy_today
+        name: ${inverter1} Energy Today
+      energy_total:
+        id: ${inverter1}_energy_total
+        name: ${inverter1} Energy Total
+      temperature:
+        id: ${inverter1}_temperature
+        name: ${inverter1} Temperature
+    rssi:
+      id: ${inverter1}_rssi
+      name: ${inverter1} RSSI
+
+  - platform: debug
+    free:
+      name: "Heap Free"
+    block:
+      name: "Heap Max Block"
+    fragmentation:
+      name: "Heap Fragmentation"
+    loop_time:
+      name: "Loop Time"
+
+text_sensor:
+  - platform: debug
+    reset_reason:
+      name: "Reset Reason"
+
+binary_sensor:
+  - platform: hms
+    hms_id: ${inverter1}_hms
+    reachable:
+      id: ${inverter1}_reachable
+      name: ${inverter1} Reachable
+    producing:
+      id: ${inverter1}_producing
+      name: ${inverter1} Producing
+      on_press:
+        - globals.set:
+            id: screen_offline_counter
+            value: '0'
+        - lambda: |-
+            id(oled).turn_on();
+            id(${inverter1}_hms).set_poll_interval(1500);
+            id(${inverter1}_limit_absolute).make_call().set_value(id(power_limit_watts)).perform();
+      on_release:
+        - lambda: 'id(${inverter1}_hms).set_poll_interval(10000);'
+
+number:
+  - platform: hms
+    hms_id: ${inverter1}_hms
+    power_percent:
+      id: ${inverter1}_limit_percent
+      name: ${inverter1} Limit Percent
+    power_absolute:
+      id: ${inverter1}_limit_absolute
+      name: ${inverter1} Limit Absolute
+
+button:
+  - platform: hms
+    hms_id: ${inverter1}_hms
+    reset_hms:
+      id: ${inverter1}_reset_hms
+      name: ${inverter1} Reset Radio
+    reset_to_output_min:
+      id: ${inverter1}_reset_to_output_min
+      name: ${inverter1} Reset to 2%
+    reset_to_output_max:
+      id: ${inverter1}_reset_to_output_max
+      name: ${inverter1} Reset to 100%
+
+output:
+  - platform: hms
+    hms_id: ${inverter1}_hms
+    power_limit_percent:
+      id: ${inverter1}_power_limit_percent_output

@@ -1,0 +1,11 @@
+---
+substitutions:
+  slug: "ventilateur-salleamanger"
+  name: "Ventilateur - Salle à manger"
+
+  api_encryption_key: !secret esphome_dining_room_fan_api_encryption_key
+
+  wifi_ap_ssid: "AP - Ventilateur salle à manger"
+
+packages:
+  device: !include devices/create_ceiling_fan.yaml
