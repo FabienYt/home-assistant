@@ -36,6 +36,14 @@ globals:
     type: float
     restore_value: no
     initial_value: '1200.0'
+  - id: wifi_disconnect_counter
+    type: uint32_t
+    restore_value: no
+    initial_value: '0'
+
+wifi:
+  on_disconnect:
+    - lambda: 'id(wifi_disconnect_counter)++;'
 
 i2c:
   sda: GPIO21
@@ -228,10 +236,20 @@ sensor:
     loop_time:
       name: "Loop Time"
 
+  - platform: template
+    name: "WiFi Disconnects"
+    lambda: 'return id(wifi_disconnect_counter);'
+    accuracy_decimals: 0
+    update_interval: 30s
+
 text_sensor:
   - platform: debug
     reset_reason:
       name: "Reset Reason"
+
+  - platform: wifi_info
+    bssid:
+      name: "WiFi BSSID"
 
 binary_sensor:
   - platform: hms
