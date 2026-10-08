@@ -9,6 +9,14 @@ substitutions:
 packages:
   device: !include devices/olimex_esp32_poe_iso.yaml
 
+esphome:
+  on_boot:
+    priority: -100
+    then:
+      - lambda: 'id(boot_count)++;'
+
+debug:
+
 teleinfo:
   id: teleinfo_main
   update_interval: 5s
@@ -22,6 +30,10 @@ globals:
   - id: teleinfo_last_frame_count
     type: int
     restore_value: false
+    initial_value: '0'
+  - id: boot_count
+    type: uint32_t
+    restore_value: true
     initial_value: '0'
 
 interval:
@@ -116,7 +128,17 @@ sensor:
     unit_of_measurement: A
     force_update: true
 
+  - platform: template
+    name: "Boot Count"
+    lambda: 'return id(boot_count);'
+    accuracy_decimals: 0
+    update_interval: 60s
+
 text_sensor:
+  - platform: debug
+    reset_reason:
+      name: "Reset Reason"
+
   - platform: teleinfo
     tag_name: "PTEC"
     name: "Période Tarifaire en cours"

@@ -99,9 +99,9 @@ actions:
                   - condition: state
                     entity_id: input_boolean.ev_forced_charge
                     state: 'off'
-                  - condition: state
-                    entity_id: sensor.jardin_teleinfo_periode_tarifaire_en_cours
-                    state: HP
+                  - condition: template
+                    value_template: >-
+                      {{ not is_state('sensor.jardin_teleinfo_periode_tarifaire_en_cours', 'HC') }}
         sequence:
           - action: switch.turn_off
             target:
