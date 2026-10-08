@@ -6,7 +6,7 @@
 # This pattern is set by default. In your config file, you can either
 # overwrite it with a different one or use "unset USERNAME_PATTERN" to
 # disable validation completely.
-USERNAME_PATTERN='^[a-z|A-Z|0-9|_|-|.]+$'
+USERNAME_PATTERN='^[a-zA-Z0-9_.-]+$'
 
 # When the timeout (in seconds) is exceeded (e.g. due to slow networking),
 # authentication fails.
@@ -36,7 +36,8 @@ elif [ ! -z "$USERNAME_PATTERN" ]; then
 	fi
 fi
 
-RESPONSE=$(curl -f -s -X POST -m "$TIMEOUT" -H "Content-type: application/json" -d '{"username":"'"$username"'","password":"'"$password"'"}' "$SERVER_URL/auth/simple/login")
+RESPONSE=$(jq -nc --arg u "$username" --arg p "$password" '{username:$u,password:$p}' \
+	| curl -f -s -X POST -m "$TIMEOUT" -H "Content-type: application/json" -d @- "$SERVER_URL/auth/simple/login")
 if [[ $? -ne 0 ]]; then
     log "Auth failed"
     exit 1

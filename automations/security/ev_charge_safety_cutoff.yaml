@@ -5,6 +5,7 @@ description: ''
 
 triggers:
   - trigger: state
+    # Keep in sync with safety_alerts.yaml and binary_sensor.safety_monitored.yaml
     entity_id: &safety_sensors
       - binary_sensor.cellier_capteur_de_fuites_d_eau_klippbok_fuite_d_eau
       - binary_sensor.cellier_capteur_de_monoxyde_de_carbone_heiman_monoxyde_de_carbone

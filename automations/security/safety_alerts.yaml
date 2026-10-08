@@ -5,6 +5,7 @@ description: ''
 
 triggers:
   - trigger: state
+    # Keep in sync with ev_charge_safety_cutoff.yaml and binary_sensor.safety_monitored.yaml
     entity_id: &safety_sensors
       - binary_sensor.cellier_capteur_de_fuites_d_eau_klippbok_fuite_d_eau
       - binary_sensor.cellier_capteur_de_monoxyde_de_carbone_heiman_monoxyde_de_carbone
@@ -77,16 +78,17 @@ actions:
           - condition: trigger
             id: alert
         sequence:
-          - action: script.notification_management
-            data:
-              recipient: signal_house
-              title: 🚨 Sécurité - Alerte en cours
-              message: '{{ label }}'
+          - parallel:
+              - action: siren.turn_on
+                continue_on_error: true
+                target:
+                  entity_id: siren.entree_detecteur_de_fumee_heiman_sirene
 
-          - action: siren.turn_on
-            continue_on_error: true
-            target:
-              entity_id: siren.entree_detecteur_de_fumee_heiman_sirene
+              - action: script.notification_management
+                data:
+                  recipient: signal_house
+                  title: 🚨 Sécurité - Alerte en cours
+                  message: '{{ label }}'
 
       - alias: Capteur toujours actif après 5 minutes
         conditions:

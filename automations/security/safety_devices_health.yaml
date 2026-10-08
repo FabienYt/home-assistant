@@ -27,9 +27,6 @@ triggers:
     for: '00:15:00'
     id: muted
 
-variables:
-  detector_excluded_devices: []
-
 actions:
   - alias: Attente de la remontée des états au démarrage
     if:
@@ -44,13 +41,7 @@ actions:
         {% for detector in states.binary_sensor
            | selectattr('attributes.device_class', 'eq', 'problem')
            | selectattr('state', 'eq', 'on') %}
-          {% set device = device_id(detector.entity_id) %}
-          {% set device_name = (device_attr(device, 'name_by_user') or device_attr(device, 'name'))
-                               if device else none %}
-          {% if detector.entity_id not in detector_excluded_devices
-                and device_name not in detector_excluded_devices %}
-            {% set ns.detectors = ns.detectors + [{'entity_id': detector.entity_id}] %}
-          {% endif %}
+          {% set ns.detectors = ns.detectors + [{'entity_id': detector.entity_id}] %}
         {% endfor %}
         {{ ns.detectors }}
       muted: >-
@@ -58,12 +49,7 @@ actions:
         {% for detector in states.binary_sensor
            | selectattr('entity_id', 'search', '_en_sourdine')
            | selectattr('state', 'eq', 'on') %}
-          {% set device = device_id(detector.entity_id) %}
-          {% set device_name = (device_attr(device, 'name_by_user') or device_attr(device, 'name'))
-                               if device else none %}
-          {% if detector.entity_id not in detector_excluded_devices
-                and device_name not in detector_excluded_devices
-                and now() - detector.last_changed > timedelta(minutes=15) %}
+          {% if now() - detector.last_changed > timedelta(minutes=15) %}
             {% set ns.detectors = ns.detectors + [{'entity_id': detector.entity_id}] %}
           {% endif %}
         {% endfor %}

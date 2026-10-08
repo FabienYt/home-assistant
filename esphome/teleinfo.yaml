@@ -70,7 +70,7 @@ sensor:
     device_class: "energy"
     state_class: "total_increasing"
     teleinfo_id: teleinfo_main
-    filters:
+    filters: &index_filters
       - filter_out: 0
       - lambda: |-
           float MAX_DIFFERENCE = 10000.0;
@@ -91,17 +91,7 @@ sensor:
     device_class: "energy"
     state_class: "total_increasing"
     teleinfo_id: teleinfo_main
-    filters:
-      - filter_out: 0
-      - lambda: |-
-          float MAX_DIFFERENCE = 10000.0;
-          static float last_value = NAN;
-          if (isnan(last_value) || std::abs(x - last_value) < MAX_DIFFERENCE)
-            return last_value = x;
-          else
-            return {};
-      - quantile:
-          window_size: 4
+    filters: *index_filters
 
   # Others
   - platform: teleinfo

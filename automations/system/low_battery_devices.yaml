@@ -22,7 +22,6 @@ triggers:
 
 variables:
   battery_low_threshold: 20
-  battery_excluded_devices: []
 
 actions:
   - alias: Attente de la remontée des états au démarrage
@@ -38,12 +37,7 @@ actions:
         {% for battery in states.sensor
            | selectattr('attributes.device_class', 'eq', 'battery')
            | selectattr('state', 'is_number') %}
-          {% set device = device_id(battery.entity_id) %}
-          {% set device_name = (device_attr(device, 'name_by_user') or device_attr(device, 'name'))
-                               if device else none %}
-          {% if battery.entity_id not in battery_excluded_devices
-                and device_name not in battery_excluded_devices
-                and battery.state | float < battery_low_threshold %}
+          {% if battery.state | float < battery_low_threshold %}
             {% set ns.batteries = ns.batteries
                + [{'entity_id': battery.entity_id,
                    'level': battery.state | float | round(0) | int}] %}
@@ -55,14 +49,8 @@ actions:
         {% for battery in states.binary_sensor
            | selectattr('attributes.device_class', 'eq', 'battery')
            | selectattr('state', 'eq', 'on') %}
-          {% set device = device_id(battery.entity_id) %}
-          {% set device_name = (device_attr(device, 'name_by_user') or device_attr(device, 'name'))
-                               if device else none %}
-          {% if battery.entity_id not in battery_excluded_devices
-                and device_name not in battery_excluded_devices %}
-            {% set ns.batteries = ns.batteries
-               + [{'entity_id': battery.entity_id, 'level': none}] %}
-          {% endif %}
+          {% set ns.batteries = ns.batteries
+             + [{'entity_id': battery.entity_id, 'level': none}] %}
         {% endfor %}
         {{ ns.batteries }}
 

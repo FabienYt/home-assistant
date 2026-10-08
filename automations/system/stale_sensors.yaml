@@ -9,9 +9,6 @@ triggers:
     attribute: sensors
     id: change
 
-variables:
-  stale_excluded_sensors: []
-
 conditions:
   - condition: template
     value_template: >-
@@ -21,34 +18,12 @@ conditions:
 actions:
   - variables:
       previous: >-
-        {%- set raw = trigger.from_state.attributes.sensors | default([], true)
-            if trigger.from_state is not none
-               and trigger.from_state.state not in ['unavailable', 'unknown']
-            else [] -%}
-        {%- set ns = namespace(kept=[]) -%}
-        {%- for sensor in raw -%}
-          {%- set device = device_id(sensor) -%}
-          {%- set device_name = (device_attr(device, 'name_by_user') or device_attr(device, 'name'))
-                                if device else none -%}
-          {%- if sensor not in stale_excluded_sensors
-                and device_name not in stale_excluded_sensors -%}
-            {%- set ns.kept = ns.kept + [sensor] -%}
-          {%- endif -%}
-        {%- endfor -%}
-        {{ ns.kept }}
+        {{ trigger.from_state.attributes.sensors | default([], true)
+           if trigger.from_state is not none
+              and trigger.from_state.state not in ['unavailable', 'unknown']
+           else [] }}
       current: >-
-        {%- set raw = trigger.to_state.attributes.sensors | default([], true) -%}
-        {%- set ns = namespace(kept=[]) -%}
-        {%- for sensor in raw -%}
-          {%- set device = device_id(sensor) -%}
-          {%- set device_name = (device_attr(device, 'name_by_user') or device_attr(device, 'name'))
-                                if device else none -%}
-          {%- if sensor not in stale_excluded_sensors
-                and device_name not in stale_excluded_sensors -%}
-            {%- set ns.kept = ns.kept + [sensor] -%}
-          {%- endif -%}
-        {%- endfor -%}
-        {{ ns.kept }}
+        {{ trigger.to_state.attributes.sensors | default([], true) }}
       went_stale: '{{ current | reject("in", previous) | list }}'
       recovered: '{{ previous | reject("in", current) | list }}'
 

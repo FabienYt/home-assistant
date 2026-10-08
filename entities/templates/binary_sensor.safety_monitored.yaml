@@ -11,6 +11,7 @@ binary_sensor:
       {{ expand(monitored) | selectattr('state', 'eq', 'on') | list | count > 0 }}
 
     attributes:
+      # Keep in sync with safety_alerts.yaml and ev_charge_safety_cutoff.yaml
       monitored: >-
         {{ ['binary_sensor.cellier_capteur_de_fuites_d_eau_klippbok_fuite_d_eau',
             'binary_sensor.cellier_capteur_de_monoxyde_de_carbone_heiman_monoxyde_de_carbone',

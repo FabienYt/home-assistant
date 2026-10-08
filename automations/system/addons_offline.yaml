@@ -25,7 +25,6 @@ variables:
   update_in_progress: >-
     {{ states.update | selectattr('attributes.in_progress', 'defined')
        | selectattr('attributes.in_progress') | list | count > 0 }}
-  restart_excluded_addons: []
   restart_cooldown_hours: 6
   restart_history: >-
     {{ (states('input_text.addon_restart_history') | from_json)
@@ -41,27 +40,44 @@ actions:
               {{ trigger.to_state.attributes.names[repeat.item]
                  | default(repeat.item) }}
             cooldown_not_elapsed: >-
-              {% set last_restart = restart_history.get(repeat.item, '') | as_datetime(none) %}
-              {{ last_restart is not none
-                 and now() - last_restart < timedelta(hours=restart_cooldown_hours) }}
+              {{ now().timestamp() - (restart_history.get(repeat.item, 0) | float(0))
+                 < restart_cooldown_hours * 3600 }}
 
         - if:
             - condition: template
-              value_template: '{{ repeat.item in restart_excluded_addons or cooldown_not_elapsed }}'
+              value_template: '{{ cooldown_not_elapsed }}'
           then:
             - action: script.notification_management
               data:
                 recipient: signal_system
                 title: ⚠️ Home Assistant - Add-on non relancé automatiquement
                 message: >-
-                  **{{ addon_name }}** (`{{ repeat.item }}`) est arrêté, mais {{
-                    'son redémarrage automatique est exclu par configuration'
-                    if repeat.item in restart_excluded_addons else
-                    'il a déjà été relancé automatiquement il y a moins de '
-                    ~ restart_cooldown_hours ~ ' h sans se stabiliser' }}.
+                  **{{ addon_name }}** (`{{ repeat.item }}`) est arrêté, mais il a déjà
+                  été relancé automatiquement il y a moins de {{ restart_cooldown_hours }} h
+                  sans se stabiliser.
 
                   Une intervention manuelle est nécessaire.
           else:
+            - action: input_text.set_value
+              target:
+                entity_id: input_text.addon_restart_history
+              data:
+                value: >-
+                  {% set raw = states('input_text.addon_restart_history') %}
+                  {% set history = (raw | from_json) if raw not in ['', 'unknown', 'unavailable'] else {} %}
+                  {% set ns = namespace(pruned={repeat.item: now().timestamp() | int}) %}
+                  {% for slug, timestamp in history.items()
+                     if slug != repeat.item
+                        and now().timestamp() - timestamp | float(0) < restart_cooldown_hours * 3600 %}
+                  {% set ns.pruned = dict(ns.pruned, **{slug: timestamp}) %}
+                  {% endfor %}
+                  {{ ns.pruned | to_json }}
+
+            - action: hassio.app_start
+              continue_on_error: true
+              data:
+                app: '{{ repeat.item }}'
+
             - action: script.notification_management
               data:
                 recipient: signal_system
@@ -70,25 +86,6 @@ actions:
                   **{{ addon_name }}** est arrêté depuis plus d'une minute.
 
                   Tentative de redémarrage automatique en cours…
-
-            - action: input_text.set_value
-              target:
-                entity_id: input_text.addon_restart_history
-              data:
-                value: >-
-                  {% set updated = dict(restart_history, **{repeat.item: now().isoformat()}) %}
-                  {% set ns = namespace(pruned={}) %}
-                  {% for slug, timestamp in updated.items() %}
-                  {% if now() - (timestamp | as_datetime(now())) < timedelta(hours=restart_cooldown_hours) %}
-                  {% set ns.pruned = dict(ns.pruned, **{slug: timestamp}) %}
-                  {% endif %}
-                  {% endfor %}
-                  {{ ns.pruned | to_json }}
-
-            - action: hassio.app_start
-              continue_on_error: true
-              data:
-                app: '{{ repeat.item }}'
 
             - wait_template: >-
                 {{ repeat.item not in

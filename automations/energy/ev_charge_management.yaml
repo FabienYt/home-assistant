@@ -41,6 +41,10 @@ triggers:
     entity_id:
       - input_boolean.ev_charge_inhibited
     id: inhibited
+  - trigger: state
+    entity_id:
+      - input_select.presence_mode
+    id: presence
 
 conditions: []
 
@@ -71,6 +75,11 @@ actions:
           - condition: state
             entity_id: input_boolean.ev_charge_inhibited
             state: 'off'
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: input_select.presence_mode
+                state: Vacances
           - condition: or
             conditions:
               - condition: state
@@ -94,6 +103,9 @@ actions:
               - condition: state
                 entity_id: input_boolean.ev_charge_inhibited
                 state: 'on'
+              - condition: state
+                entity_id: input_select.presence_mode
+                state: Vacances
               - condition: and
                 conditions:
                   - condition: state
