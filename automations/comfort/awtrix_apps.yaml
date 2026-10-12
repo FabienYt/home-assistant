@@ -7,8 +7,7 @@ triggers:
   - trigger: state
     entity_id:
       - sensor.salon_hoymiles_abris_bois_ac_power
-      - sensor.jardin_station_meteo_shelly_ecowitt_ws90_apparent_temperature
-  # back from unavailable after a clock reboot: pushed apps must be re-sent
+      - sensor.jardin_station_meteo_shelly_ecowitt_ws90_temperature
   - trigger: state
     entity_id: sensor.salon_awtrix_ng_mqtt_prefix
 
@@ -19,14 +18,18 @@ conditions:
 variables:
   prefix: "{{ states('sensor.salon_awtrix_ng_mqtt_prefix') }}"
   solar_entity: sensor.salon_hoymiles_abris_bois_ac_power
-  temperature_entity: sensor.jardin_station_meteo_shelly_ecowitt_ws90_apparent_temperature
+  temperature_entity: sensor.jardin_station_meteo_shelly_ecowitt_ws90_temperature
 
 actions:
-  - action: mqtt.publish
-    data:
-      topic: "{{ prefix }}/cmd/apps/pushed/solar"
-      payload: >-
-        {{ {'text': (states(solar_entity) | float(0) | round(0) | int) ~ ' W', 'icon': 'solar'} | to_json }}
+  - if:
+      - condition: template
+        value_template: "{{ has_value(solar_entity) }}"
+    then:
+      - action: mqtt.publish
+        data:
+          topic: "{{ prefix }}/cmd/apps/pushed/solar"
+          payload: >-
+            {{ {'text': (states(solar_entity) | float(0) | round(0) | int) ~ ' W', 'icon': 'solar'} | to_json }}
 
   - if:
       - condition: template
