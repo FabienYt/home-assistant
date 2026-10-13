@@ -38,6 +38,7 @@ globals:
 
 interval:
   - interval: 10min
+    startup_delay: 10min
     then:
       - if:
           condition:
