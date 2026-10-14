@@ -1,0 +1,29 @@
+---
+id: mosquito_repellent_plugs
+alias: Prises anti-moustique - Plage 19h30-8h
+description: ''
+
+triggers:
+  - trigger: state
+    entity_id:
+      - switch.chambre_de_jade_prise_anti_moustique
+      - switch.salle_de_jeux_prise_anti_moustique
+    from: unavailable
+    id: refresh
+  - trigger: event
+    event_type: automation_reloaded
+    id: refresh
+  - trigger: time_pattern
+    minutes: /15
+    id: refresh
+
+conditions: []
+
+actions:
+  - action: "switch.turn_{{ 'on' if now() >= today_at('19:30') or now() < today_at('08:00') else 'off' }}"
+    target:
+      entity_id: >-
+        {{ trigger.entity_id | default(['switch.chambre_de_jade_prise_anti_moustique',
+        'switch.salle_de_jeux_prise_anti_moustique']) }}
+
+mode: queued
