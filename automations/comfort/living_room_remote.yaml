@@ -45,7 +45,7 @@ actions:
             data:
               brightness_pct: 50
 
-      - alias: Ampoule du salon à pleine luminosité
+      - alias: Ampoule du salon à pleine luminosité ou à 50%
         conditions:
           - condition: trigger
             id: button
@@ -56,7 +56,7 @@ actions:
             target:
               entity_id: light.salon_ampoule_led_e27_1521_lumen_kajplats
             data:
-              brightness_pct: 100
+              brightness_pct: '{{ 50 if brightness >= 254 else 100 }}'
 
       - alias: Augmentation de la luminosité du salon
         conditions:
