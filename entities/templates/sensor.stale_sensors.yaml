@@ -6,7 +6,9 @@ sensor:
 
     state: >-
       {%- set stale_thresholds = {'apparent_power': 20, 'current': 20} -%}
-      {%- set stale_thresholds_min = {'Hoymiles': 1440, 'Cellier - Interrupteur - Chargeur des VE': 1440} -%}
+      {%- set stale_thresholds_min = {'Hoymiles': 1440, 'Cellier - Interrupteur - Chargeur des VE': 1440,
+                                      'Chambre de Jade - Prise anti-moustique': 1440,
+                                      'Salle de jeux - Prise anti-moustique': 1440} -%}
       {%- set ns = namespace(sensors=[]) -%}
       {%- for s in expand(integration_entities('esphome') + integration_entities('mqtt'))
                     | selectattr('domain', 'eq', 'sensor')
@@ -25,7 +27,9 @@ sensor:
     attributes:
       sensors: >-
         {%- set stale_thresholds = {'apparent_power': 20, 'current': 20} -%}
-        {%- set stale_thresholds_min = {'Hoymiles': 1440, 'Cellier - Interrupteur - Chargeur des VE': 1440} -%}
+        {%- set stale_thresholds_min = {'Hoymiles': 1440, 'Cellier - Interrupteur - Chargeur des VE': 1440,
+                                        'Chambre de Jade - Prise anti-moustique': 1440,
+                                        'Salle de jeux - Prise anti-moustique': 1440} -%}
         {%- set ns = namespace(sensors=[]) -%}
         {%- for s in expand(integration_entities('esphome') + integration_entities('mqtt'))
                       | selectattr('domain', 'eq', 'sensor')
