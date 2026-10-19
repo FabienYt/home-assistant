@@ -8,7 +8,9 @@ triggers:
     entity_id:
       - switch.chambre_de_jade_prise_anti_moustique
       - switch.salle_de_jeux_prise_anti_moustique
-    from: unavailable
+    from:
+      - unavailable
+      - unknown
     id: refresh
   - trigger: event
     event_type: automation_reloaded
