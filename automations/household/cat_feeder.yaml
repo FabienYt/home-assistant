@@ -1,0 +1,24 @@
+---
+id: cat_feeder
+alias: Distributeur de croquettes - Répartition sur la journée
+description: ''
+
+triggers:
+  - trigger: time_pattern
+    minutes: /15
+
+conditions:
+  - condition: template
+    value_template: >-
+      {{ is_number(states('sensor.cuisine_distributeur_de_croquettes_portions_per_day'))
+      and states('sensor.cuisine_distributeur_de_croquettes_portions_per_day') | int
+      < (now().hour * states('input_number.cat_feeder_portions_per_day') | int / 23) | round(0, 'ceil') }}
+
+actions:
+  - action: select.select_option
+    target:
+      entity_id: select.cuisine_distributeur_de_croquettes_feed
+    data:
+      option: START
+
+mode: single

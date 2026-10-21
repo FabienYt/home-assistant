@@ -1,0 +1,26 @@
+---
+id: cat_feeder_missed_portions
+alias: Distributeur de croquettes - Portions manquantes
+description: ''
+
+triggers:
+  - trigger: time
+    at: "23:59:00"
+
+conditions:
+  - condition: template
+    value_template: >-
+      {{ not is_number(states('sensor.cuisine_distributeur_de_croquettes_portions_per_day'))
+      or states('sensor.cuisine_distributeur_de_croquettes_portions_per_day') | int
+      < states('input_number.cat_feeder_portions_per_day') | int }}
+
+actions:
+  - action: script.notification_management
+    data:
+      recipient: signal_house
+      title: 🐱 Distributeur de croquettes - Portions manquantes
+      message: >-
+        Portions distribuées aujourd'hui : {{ states('sensor.cuisine_distributeur_de_croquettes_portions_per_day') }}
+        / {{ states('input_number.cat_feeder_portions_per_day') | int }}.
+
+mode: single

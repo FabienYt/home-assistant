@@ -1,0 +1,7 @@
+---
+name: Distributeur de croquettes - Portions par jour
+icon: mdi:cat
+min: 0
+max: 30
+step: 1
+mode: box
