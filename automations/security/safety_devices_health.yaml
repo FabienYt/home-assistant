@@ -16,7 +16,7 @@ triggers:
   - trigger: template
     value_template: >-
       {{ states.binary_sensor
-         | selectattr('attributes.device_class', 'eq', 'problem')
+         | selectattr('entity_id', 'search', '_defaut_materiel|_fin_de_service')
          | selectattr('state', 'eq', 'on') | list | count > 0 }}
     id: problem
   - trigger: template
@@ -39,7 +39,7 @@ actions:
       problems: >-
         {% set ns = namespace(detectors=[]) %}
         {% for detector in states.binary_sensor
-           | selectattr('attributes.device_class', 'eq', 'problem')
+           | selectattr('entity_id', 'search', '_defaut_materiel|_fin_de_service')
            | selectattr('state', 'eq', 'on') %}
           {% set ns.detectors = ns.detectors + [{'entity_id': detector.entity_id}] %}
         {% endfor %}
