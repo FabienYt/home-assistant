@@ -1,0 +1,20 @@
+---
+id: onecta_rate_limit
+alias: Daikin - Quota Onecta presque épuisé
+description: ''
+
+triggers:
+  - trigger: numeric_state
+    entity_id: sensor.bureau_gateway_ratelimit_restant_aujourd_hui
+    below: 20
+
+actions:
+  - action: script.notification_management
+    data:
+      recipient: signal_system
+      title: 🚨 Daikin - Quota Onecta presque épuisé
+      message: >-
+        Il reste {{ trigger.to_state.state }} appels Onecta aujourd'hui.
+        La gestion du climat est suspendue jusqu'à la remise à zéro du quota.
+
+mode: single

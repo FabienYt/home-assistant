@@ -1,0 +1,12 @@
+---
+id: climate_bureau
+alias: Bureau - Gestion du climat
+description: ''
+
+use_blueprint:
+  path: comfort/smart_climate.yaml
+  input:
+    climate_entity: climate.bureau_room_temperature
+    target_entity: input_number.climate_bureau_target
+    temperature_sensor: sensor.bureau_capteur_de_qualite_d_air_alpstuga_temperature
+    rate_limit_sensor: sensor.bureau_gateway_ratelimit_restant_aujourd_hui

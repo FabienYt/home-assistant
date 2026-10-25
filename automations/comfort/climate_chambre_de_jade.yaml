@@ -1,0 +1,12 @@
+---
+id: climate_chambre_de_jade
+alias: Chambre de Jade - Gestion du climat
+description: ''
+
+use_blueprint:
+  path: comfort/smart_climate.yaml
+  input:
+    climate_entity: climate.chambre_de_jade_room_temperature
+    target_entity: input_number.climate_chambre_de_jade_target
+    temperature_sensor: sensor.chambre_de_jade_capteur_de_qualite_d_air_alpstuga_temperature
+    rate_limit_sensor: sensor.chambre_de_jade_gateway_ratelimit_restant_aujourd_hui
