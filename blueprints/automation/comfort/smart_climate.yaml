@@ -47,9 +47,10 @@ variables:
   setpoint: >-
     {% set step = state_attr(climate_entity, 'target_temp_step') or 0.5 %}
     {% set t = ((target + offset) / step) | round * step %}
-    {{ ([state_attr(climate_entity, 'min_temp'), t,
-         state_attr(climate_entity, 'max_temp')] | sort)[1] }}
-  deadband: "{{ 1 if temperature_sensor else 0.5 }}"
+    {{ ([state_attr(climate_entity, 'min_temp') | float(t), t,
+         state_attr(climate_entity, 'max_temp') | float(t)] | sort)[1] }}
+  deadband: >-
+    {{ 0.1 if trigger.id == 'target' else 1 if temperature_sensor else 0.5 }}
 
 triggers:
   - trigger: homeassistant
@@ -60,6 +61,7 @@ triggers:
     minutes: /30
   - trigger: state
     entity_id: !input target_entity
+    id: target
 
 conditions:
   - condition: template
