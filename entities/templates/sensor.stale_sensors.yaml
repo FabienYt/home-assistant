@@ -15,7 +15,7 @@ sensor:
                     | rejectattr('state', 'in', ['unavailable', 'unknown'])
                     | rejectattr('attributes.device_class', 'eq', 'timestamp')
                     | rejectattr('attributes.device_class', 'in', ['battery', 'precipitation', 'precipitation_intensity'])
-                    | rejectattr('entity_id', 'search', '(_version|_uptime|_ip_address|_linkquality|_last_seen|_memory_(heap|psram)_(free|largest_block)|_screen_(active_timezone|date)|_network_map|_ws90_voltage|_ws90_capacitor_voltage)$') -%}
+                    | rejectattr('entity_id', 'search', '(_version|_uptime|_ip_address|_linkquality|_last_seen|_memory_(heap|psram)_(free|largest_block)|_screen_(active_(timezone|theme)|date)|_network_map|_ws90_voltage|_ws90_capacitor_voltage|_boot_count|_reset_reason|_mqtt_prefix)$') -%}
         {%- set device_name = device_attr(device_id(s.entity_id), 'name') if device_id(s.entity_id) else none -%}
         {%- set threshold = [stale_thresholds.get(s.attributes.device_class, 1440), stale_thresholds_min.get(device_name, 0)] | max -%}
         {%- if now() - s.last_reported > timedelta(minutes=threshold) -%}
@@ -36,7 +36,7 @@ sensor:
                       | rejectattr('state', 'in', ['unavailable', 'unknown'])
                       | rejectattr('attributes.device_class', 'eq', 'timestamp')
                       | rejectattr('attributes.device_class', 'in', ['battery', 'precipitation', 'precipitation_intensity'])
-                      | rejectattr('entity_id', 'search', '(_version|_uptime|_ip_address|_linkquality|_last_seen|_memory_(heap|psram)_(free|largest_block)|_screen_(active_timezone|date)|_network_map|_ws90_voltage|_ws90_capacitor_voltage)$') -%}
+                      | rejectattr('entity_id', 'search', '(_version|_uptime|_ip_address|_linkquality|_last_seen|_memory_(heap|psram)_(free|largest_block)|_screen_(active_(timezone|theme)|date)|_network_map|_ws90_voltage|_ws90_capacitor_voltage|_boot_count|_reset_reason|_mqtt_prefix)$') -%}
           {%- set device_name = device_attr(device_id(s.entity_id), 'name') if device_id(s.entity_id) else none -%}
           {%- set threshold = [stale_thresholds.get(s.attributes.device_class, 1440), stale_thresholds_min.get(device_name, 0)] | max -%}
           {%- if now() - s.last_reported > timedelta(minutes=threshold) -%}
