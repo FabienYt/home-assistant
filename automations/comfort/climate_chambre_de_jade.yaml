@@ -9,4 +9,7 @@ use_blueprint:
     climate_entity: climate.chambre_de_jade_room_temperature
     target_entity: input_number.climate_chambre_de_jade_target
     temperature_sensor: sensor.chambre_de_jade_capteur_de_qualite_d_air_alpstuga_temperature
+    weather_entity: !secret meteo_france_weather_entity
+    outdoor_change_sensor: sensor.jardin_variation_temperature_3_h
+    weather_gain_entity: input_number.climate_chambre_de_jade_weather_gain
     rate_limit_sensor: sensor.chambre_de_jade_gateway_ratelimit_restant_aujourd_hui

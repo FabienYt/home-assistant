@@ -1,0 +1,10 @@
+---
+platform: statistics
+name: Jardin - Variation température 3 h
+unique_id: '6cea841f-0c56-4cad-a08a-e813e4996655'
+entity_id: sensor.jardin_station_meteo_shelly_ecowitt_ws90_temperature
+state_characteristic: change
+max_age:
+  hours: 3
+sampling_size: 500
+keep_last_sample: true

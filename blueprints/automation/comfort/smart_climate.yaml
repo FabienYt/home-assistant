@@ -2,9 +2,11 @@
 blueprint:
   name: Gestion du climat
   description: >-
-    Keeps a room at the target temperature by adjusting the heat pump
-    setpoint, optionally corrected with a room sensor. Only acts while the
-    unit is in heat mode.
+    Keeps a room at the target temperature by nudging the heat pump
+    setpoint from the room sensor, anticipating the outdoor temperature
+    change of the next 3 hours from the hourly forecast. The anticipation
+    gain learns from past outdoor changes. Only acts while the unit is in
+    heat mode.
   domain: automation
   input:
     climate_entity:
@@ -18,12 +20,26 @@ blueprint:
         entity:
           domain: input_number
     temperature_sensor:
-      name: Sonde de la pièce (facultatif)
-      default: ''
+      name: Sonde de la pièce
       selector:
         entity:
           domain: sensor
           device_class: temperature
+    weather_entity:
+      name: Météo (prévisions horaires)
+      selector:
+        entity:
+          domain: weather
+    outdoor_change_sensor:
+      name: Variation de la température extérieure sur 3 h
+      selector:
+        entity:
+          domain: sensor
+    weather_gain_entity:
+      name: Gain météo (appris)
+      selector:
+        entity:
+          domain: input_number
     rate_limit_sensor:
       name: Quota Onecta restant (facultatif)
       default: ''
@@ -34,23 +50,16 @@ blueprint:
 variables:
   climate_entity: !input climate_entity
   target_entity: !input target_entity
-  target: "{{ states(target_entity) | float }}"
   temperature_sensor: !input temperature_sensor
+  weather_entity: !input weather_entity
+  outdoor_change_sensor: !input outdoor_change_sensor
+  weather_gain_entity: !input weather_gain_entity
   rate_limit_sensor: !input rate_limit_sensor
-  unit_temp: "{{ state_attr(climate_entity, 'current_temperature') }}"
-  room: >-
-    {{ states(temperature_sensor) | float(unit_temp)
-       if temperature_sensor else unit_temp }}
-  offset: >-
-    {{ ([-3, unit_temp - room, 3] | sort)[1]
-       if unit_temp is number and room is number else 0 }}
-  setpoint: >-
-    {% set step = state_attr(climate_entity, 'target_temp_step') or 0.5 %}
-    {% set t = ((target + offset) / step) | round * step %}
-    {{ ([state_attr(climate_entity, 'min_temp') | float(t), t,
-         state_attr(climate_entity, 'max_temp') | float(t)] | sort)[1] }}
-  deadband: >-
-    {{ 0.1 if trigger.id == 'target' else 1 if temperature_sensor else 0.5 }}
+  target: "{{ states(target_entity) | float }}"
+  room: "{{ states(temperature_sensor) | float(none) }}"
+  current: "{{ state_attr(climate_entity, 'temperature') | float(none) }}"
+  low: "{{ [target - 1, state_attr(climate_entity, 'min_temp') | float(0)] | max }}"
+  high: "{{ [target + 5, state_attr(climate_entity, 'max_temp') | float(99)] | min }}"
 
 triggers:
   - trigger: homeassistant
@@ -58,7 +67,8 @@ triggers:
   - trigger: event
     event_type: automation_reloaded
   - trigger: time_pattern
-    minutes: /30
+    hours: /1
+    id: tick
   - trigger: state
     entity_id: !input target_entity
     id: target
@@ -68,12 +78,64 @@ conditions:
     value_template: >-
       {{ is_state(climate_entity, 'heat')
          and room is number
+         and current is number
          and (not rate_limit_sensor
-              or states(rate_limit_sensor) | int(0) >= 20)
-         and (setpoint - state_attr(climate_entity, 'temperature')
-              | float(0)) | abs >= deadband }}
+              or states(rate_limit_sensor) | int(0) >= 20) }}
 
 actions:
+  - action: weather.get_forecasts
+    target:
+      entity_id: "{{ weather_entity }}"
+    data:
+      type: hourly
+    response_variable: forecast
+    continue_on_error: true
+
+  - variables:
+      gain: "{{ states(weather_gain_entity) | float(0) }}"
+      hourly: >-
+        {{ forecast[weather_entity].forecast
+           if forecast is defined and weather_entity in forecast else [] }}
+      outlook: >-
+        {{ hourly[3].temperature - hourly[0].temperature
+           if hourly | count > 3 else 0 }}
+      error: "{{ target - room - gain * outlook }}"
+      setpoint: >-
+        {% set step = state_attr(climate_entity, 'target_temp_step') or 0.5 %}
+        {% set base = [current, state_attr(climate_entity, 'current_temperature')
+                                | float(0) - 1] | max
+                      if error > 0 else current %}
+        {% if trigger.id == 'target' %}
+          {% set t = current + target
+                     - trigger.from_state.state | float(target) %}
+        {% elif error | abs >= 1 %}
+          {% set t = base + (2 * step if error > 0 else -2 * step) %}
+        {% elif error | abs >= 0.3 %}
+          {% set t = base + (step if error > 0 else -step) %}
+        {% else %}
+          {% set t = current %}
+        {% endif %}
+        {{ ([low, (t / step) | round * step, high] | sort)[1] }}
+      new_gain: >-
+        {{ ([0, gain + 0.002 * (room - target)
+                * states(outdoor_change_sensor) | float(0), 0.5] | sort)[1]
+           | round(3) }}
+
+  - if:
+      - condition: template
+        value_template: >-
+          {{ trigger.id == 'tick' and low < current < high
+             and new_gain != gain }}
+    then:
+      - action: input_number.set_value
+        target:
+          entity_id: "{{ weather_gain_entity }}"
+        data:
+          value: "{{ new_gain }}"
+
+  - condition: template
+    value_template: "{{ setpoint != current }}"
+
   - action: climate.set_temperature
     target:
       entity_id: "{{ climate_entity }}"
