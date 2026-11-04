@@ -6,10 +6,6 @@ description: ''
 triggers:
   - trigger: homeassistant
     event: start
-  - trigger: time
-    at:
-      - "08:00:00"
-      - "20:00:00"
   - trigger: time_pattern
     minutes: /30
 
