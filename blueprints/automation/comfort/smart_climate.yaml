@@ -58,7 +58,7 @@ variables:
   target: "{{ states(target_entity) | float }}"
   room: "{{ states(temperature_sensor) | float(none) }}"
   current: "{{ state_attr(climate_entity, 'temperature') | float(none) }}"
-  low: "{{ [target - 1, state_attr(climate_entity, 'min_temp') | float(0)] | max }}"
+  low: "{{ [target - 3, state_attr(climate_entity, 'min_temp') | float(0)] | max }}"
   high: "{{ [target + 5, state_attr(climate_entity, 'max_temp') | float(99)] | min }}"
 
 triggers:
