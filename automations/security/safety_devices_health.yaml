@@ -68,13 +68,10 @@ actions:
             message: |-
               {% for detector in repeat.item.detectors -%}
               {%- set area = area_name(detector.entity_id) -%}
-              {%- set device = device_id(detector.entity_id) -%}
-              {%- set device_name = (device_attr(device, 'name_by_user') or device_attr(device, 'name'))
-                                    if device else none -%}
-              {%- set label = state_attr(detector.entity_id, 'friendly_name') or detector.entity_id -%}
-              {%- set label = (label | replace(device_name, '') | trim) if device_name else label -%}
-              - **{{ device_name or label }}**{{ ' *(' ~ area ~ ')*' if area else '' }}{{
-                  ' : ' ~ label if device_name and label else '' }}
+              {%- set device = device_name(detector.entity_id) -%}
+              {%- set label = entity_name(detector.entity_id) -%}
+              - **{{ device or label or detector.entity_id }}**{{ ' *(' ~ area ~ ')*' if area else '' }}{{
+                  ' : ' ~ label if device and label else '' }}
               {% endfor %}
 
 mode: single

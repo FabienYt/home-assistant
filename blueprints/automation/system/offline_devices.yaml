@@ -100,5 +100,5 @@ actions:
             message: |-
               {% for device in repeat.item.devices -%}
               {%- set area = area_name(device) -%}
-              - **{{ device_attr(device, 'name_by_user') or device_attr(device, 'name') }}**{{ ' *(' ~ area ~ ')*' if area else '' }}
+              - **{{ device_name(device) }}**{{ ' *(' ~ area ~ ')*' if area else '' }}
               {% endfor %}

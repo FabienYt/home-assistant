@@ -38,7 +38,7 @@ variables:
   label: >-
     {% if trigger.to_state is defined %}
     {{ device_icons[trigger.to_state.attributes.device_class] | default('🚨', true) }}
-    **{{ trigger.to_state.attributes.friendly_name or trigger.entity_id }}**{{
+    **{{ device_name(trigger.entity_id) or entity_name(trigger.entity_id) or trigger.entity_id }}**{{
       ' *(' ~ area ~ ')*' if area else '' }}
     {% endif %}
   others_active_list: >-

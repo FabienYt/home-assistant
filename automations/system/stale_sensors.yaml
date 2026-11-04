@@ -42,19 +42,16 @@ actions:
             message: |-
               {% for sensor in repeat.item.sensors -%}
               {%- set area = area_name(sensor) -%}
-              {%- set device = device_id(sensor) -%}
-              {%- set device_name = (device_attr(device, 'name_by_user') or device_attr(device, 'name'))
-                                    if device else none -%}
-              {%- set label = state_attr(sensor, 'friendly_name') or sensor -%}
-              {%- set label = (label | replace(device_name, '') | trim) if device_name else label -%}
+              {%- set device = device_name(sensor) -%}
+              {%- set label = entity_name(sensor) -%}
               {%- set age = '' -%}
               {%- if repeat.item.stale and states[sensor] is not none -%}
                 {%- set hours = ((now() - states[sensor].last_reported).total_seconds() / 3600)
                     | round(1) | string | replace('.', ',') -%}
                 {%- set age = ' (muet depuis ' ~ hours ~ ' h)' -%}
               {%- endif -%}
-              - **{{ device_name or label }}**{{ ' *(' ~ area ~ ')*' if area else '' }}{{
-                  ' : ' ~ label if device_name and label else '' }}{{ age }}
+              - **{{ device or label or sensor }}**{{ ' *(' ~ area ~ ')*' if area else '' }}{{
+                  ' : ' ~ label if device and label else '' }}{{ age }}
               {% endfor %}
 
 mode: single
