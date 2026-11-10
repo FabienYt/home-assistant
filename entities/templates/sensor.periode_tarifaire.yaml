@@ -1,0 +1,12 @@
+---
+sensor:
+  - default_entity_id: sensor.periode_tarifaire
+    name: Période tarifaire
+    unique_id: '49d1ec8c-b186-413f-bffb-4a5cdf0d99ce'
+
+    icon: mdi:cash-clock
+
+    state: >-
+      {% set m = now().hour * 60 + now().minute %}
+      {% set schedule_hc = 875 <= m <= 993 or m >= 1415 or m <= 333 %}
+      {{ 'HC' if schedule_hc or is_state('sensor.jardin_teleinfo_periode_tarifaire_en_cours', 'HC') else 'HP' }}

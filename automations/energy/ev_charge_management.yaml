@@ -15,7 +15,7 @@ triggers:
     id: refresh
   - trigger: state
     entity_id:
-      - sensor.jardin_teleinfo_periode_tarifaire_en_cours
+      - sensor.periode_tarifaire
     id: tariff
   - trigger: state
     entity_id:
@@ -86,7 +86,7 @@ actions:
                 entity_id: input_boolean.ev_forced_charge
                 state: 'on'
               - condition: state
-                entity_id: sensor.jardin_teleinfo_periode_tarifaire_en_cours
+                entity_id: sensor.periode_tarifaire
                 state: HC
         sequence:
           - action: switch.turn_on
@@ -113,7 +113,7 @@ actions:
                     state: 'off'
                   - condition: template
                     value_template: >-
-                      {{ not is_state('sensor.jardin_teleinfo_periode_tarifaire_en_cours', 'HC') }}
+                      {{ not is_state('sensor.periode_tarifaire', 'HC') }}
         sequence:
           - action: switch.turn_off
             target:

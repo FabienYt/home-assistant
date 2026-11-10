@@ -8,12 +8,9 @@ triggers:
     event: start
   - trigger: event
     event_type: automation_reloaded
-  - trigger: time
-    at:
-      - '05:34:00'
-      - '14:34:00'
-      - '16:34:00'
-      - '23:34:00'
+  - trigger: state
+    entity_id:
+      - sensor.periode_tarifaire
   - trigger: time_pattern
     minutes: /15
   - trigger: state
@@ -29,8 +26,7 @@ conditions:
 
 actions:
   - action: >-
-      input_boolean.turn_{{ 'on' if today_at('14:34') <= now() < today_at('16:34')
-      or now() >= today_at('23:34') or now() < today_at('05:34') else 'off' }}
+      input_boolean.turn_{{ 'on' if is_state('sensor.periode_tarifaire', 'HC') else 'off' }}
     target:
       entity_id: input_boolean.ev_forced_charge
 
