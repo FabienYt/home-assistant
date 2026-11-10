@@ -13,3 +13,5 @@ use_blueprint:
     outdoor_change_sensor: sensor.jardin_variation_temperature_3_h
     weather_gain_entity: input_number.climate_bureau_weather_gain
     rate_limit_sensor: sensor.bureau_gateway_ratelimit_restant_aujourd_hui
+    tariff_sensor: sensor.periode_tarifaire
+    off_peak_boost: 0.5
