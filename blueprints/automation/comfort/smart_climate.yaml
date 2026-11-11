@@ -1,6 +1,6 @@
 ---
 blueprint:
-  name: Gestion du climat
+  name: Régulation thermique
   description: >-
     Keeps a room at the target temperature by nudging the heat pump
     setpoint from the room sensor, anticipating the outdoor temperature

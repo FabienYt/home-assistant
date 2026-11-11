@@ -15,6 +15,6 @@ actions:
       title: 🚨 Daikin - Quota Onecta presque épuisé
       message: >-
         Il reste {{ trigger.to_state.state }} appels Onecta aujourd'hui.
-        La gestion du climat est suspendue jusqu'à la remise à zéro du quota.
+        La régulation thermique est suspendue jusqu'à la remise à zéro du quota.
 
 mode: single
