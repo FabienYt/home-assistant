@@ -15,3 +15,5 @@ use_blueprint:
     rate_limit_sensor: sensor.chambre_de_jade_gateway_ratelimit_restant_aujourd_hui
     tariff_sensor: sensor.periode_tarifaire
     off_peak_boost: 0.5
+    presence_entity: input_select.presence_mode
+    away_reduction: 2

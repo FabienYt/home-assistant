@@ -6,8 +6,10 @@ blueprint:
     setpoint from the room sensor, anticipating the outdoor temperature
     change of the next 3 hours from the hourly forecast. The anticipation
     gain learns from past outdoor changes. Only acts while the unit is in
-    heat mode. Optionally raises the target during off-peak hours to store
-    heat in the walls.
+    heat mode and skips regulation when the room sensor has not reported for
+    30 minutes. Halves the setpoint windup when the room overshoots by 1 °C.
+    Optionally raises the target during off-peak hours to store heat in the
+    walls, and lowers it while nobody is home.
   domain: automation
   input:
     climate_entity:
@@ -61,6 +63,35 @@ blueprint:
           max: 2
           step: 0.5
           unit_of_measurement: °C
+    presence_entity:
+      name: Mode de présence
+      selector:
+        entity:
+          domain: input_select
+    away_reduction:
+      name: Réduction en absence
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 5
+          step: 0.5
+          unit_of_measurement: °C
+    night_quiet:
+      name: Ventilation silencieuse la nuit
+      default: true
+      selector:
+        boolean: {}
+    quiet_start:
+      name: Début du mode silencieux
+      default: "20:00:00"
+      selector:
+        time: {}
+    quiet_end:
+      name: Fin du mode silencieux
+      default: "08:00:00"
+      selector:
+        time: {}
 
 variables:
   climate_entity: !input climate_entity
@@ -72,9 +103,17 @@ variables:
   rate_limit_sensor: !input rate_limit_sensor
   tariff_sensor: !input tariff_sensor
   off_peak_boost: !input off_peak_boost
+  presence_entity: !input presence_entity
+  away_reduction: !input away_reduction
+  night_quiet: !input night_quiet
+  quiet_start: !input quiet_start
+  quiet_end: !input quiet_end
   target: >-
+    {% set away = states(presence_entity) in ['Absent', 'Vacances'] %}
     {{ states(target_entity) | float
-       + (off_peak_boost if is_state(tariff_sensor, 'HC') else 0) }}
+       - (away_reduction if away else 0)
+       + (off_peak_boost if is_state(tariff_sensor, 'HC') and not away
+          else 0) }}
   room: "{{ states(temperature_sensor) | float(none) }}"
   current: "{{ state_attr(climate_entity, 'temperature') | float(none) }}"
   low: "{{ [target - 3, state_attr(climate_entity, 'min_temp') | float(0)] | max }}"
@@ -97,12 +136,23 @@ triggers:
       - HC
       - HP
     id: tariff
+  - trigger: state
+    entity_id: !input presence_entity
+    id: presence
+  - trigger: time
+    at: !input quiet_start
+    id: quiet_start
+  - trigger: time
+    at: !input quiet_end
+    id: quiet_end
 
 conditions:
   - condition: template
     value_template: >-
       {{ is_state(climate_entity, 'heat')
          and room is number
+         and now() - states[temperature_sensor].last_reported
+             < timedelta(minutes=30)
          and current is number
          and (not rate_limit_sensor
               or states(rate_limit_sensor) | int(0) >= 20) }}
@@ -134,14 +184,21 @@ actions:
           {% set t = current + trigger.to_state.state | float(0)
                      - trigger.from_state.state
                        | float(trigger.to_state.state | float(0)) %}
-        {% elif error | abs >= 1 %}
-          {% set t = base + (2 * step if error > 0 else -2 * step) %}
+        {% elif error >= 1 %}
+          {% set t = base + 2 * step %}
+        {% elif error <= -1 %}
+          {% set t = [base - 2 * step, (current + target) / 2] | min %}
         {% elif error | abs >= 0.3 %}
           {% set t = base + (step if error > 0 else -step) %}
         {% else %}
           {% set t = current %}
         {% endif %}
         {{ ([low, (t / step) | round * step, high] | sort)[1] }}
+      quiet: "{{ is_state_attr(climate_entity, 'fan_mode', 'quiet') }}"
+      night: >-
+        {% set t = now().strftime('%H:%M:%S') %}
+        {{ (t >= quiet_start or t < quiet_end) if quiet_start > quiet_end
+           else quiet_start <= t < quiet_end }}
       new_gain: >-
         {{ ([0, gain + 0.002 * (room - target)
                 * states(outdoor_change_sensor) | float(0), 0.5] | sort)[1]
@@ -150,7 +207,7 @@ actions:
   - if:
       - condition: template
         value_template: >-
-          {{ trigger.id == 'tick' and low < current < high
+          {{ trigger.id == 'tick' and low < current < high and not quiet
              and new_gain != gain }}
     then:
       - action: input_number.set_value
@@ -158,6 +215,30 @@ actions:
           entity_id: "{{ weather_gain_entity }}"
         data:
           value: "{{ new_gain }}"
+
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: >-
+              {{ night_quiet and trigger.id == 'quiet_start' and not quiet }}
+        sequence:
+          - action: climate.set_fan_mode
+            target:
+              entity_id: "{{ climate_entity }}"
+            data:
+              fan_mode: quiet
+      - conditions:
+          - condition: template
+            value_template: >-
+              {{ night_quiet and quiet
+                 and (not night
+                      or target - room >= 0.5 and current >= target + 2) }}
+        sequence:
+          - action: climate.set_fan_mode
+            target:
+              entity_id: "{{ climate_entity }}"
+            data:
+              fan_mode: auto
 
   - condition: template
     value_template: "{{ setpoint != current }}"
