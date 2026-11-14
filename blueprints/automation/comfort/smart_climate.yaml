@@ -117,7 +117,9 @@ variables:
   room: "{{ states(temperature_sensor) | float(none) }}"
   current: "{{ state_attr(climate_entity, 'temperature') | float(none) }}"
   low: "{{ [target - 3, state_attr(climate_entity, 'min_temp') | float(0)] | max }}"
-  high: "{{ [target + 5, state_attr(climate_entity, 'max_temp') | float(99)] | min }}"
+  high: >-
+    {{ [target + (1 if is_state_attr(climate_entity, 'fan_mode', 'quiet') else 5),
+        state_attr(climate_entity, 'max_temp') | float(99)] | min }}
 
 triggers:
   - trigger: homeassistant
@@ -232,7 +234,7 @@ actions:
             value_template: >-
               {{ night_quiet and quiet
                  and (not night
-                      or target - room >= 0.5 and current >= target + 2) }}
+                      or target - room >= 0.5 and current >= high) }}
         sequence:
           - action: climate.set_fan_mode
             target:
