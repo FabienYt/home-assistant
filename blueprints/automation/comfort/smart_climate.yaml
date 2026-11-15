@@ -251,4 +251,4 @@ actions:
     data:
       temperature: "{{ setpoint }}"
 
-mode: single
+mode: queued
