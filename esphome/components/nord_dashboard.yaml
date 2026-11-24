@@ -1,0 +1,837 @@
+---
+# Bureau dashboard, Nord palette (https://www.nordtheme.com/).
+# Text colors are checked against WCAG AA on the nord1 card background:
+# nord6/nord4/nord8/nord13/nord14 for any text, nord12/nord11 only for >= 24px text or graphics.
+substitutions:
+  backlight_lux_min: "50"
+  backlight_lux_max: "20000"
+  backlight_level_min: "0.15"
+  backlight_wake_level: "0.3"
+  backlight_wake_duration: 30s
+
+esphome:
+  includes:
+    - components/nord_dashboard.h
+
+font:
+  - file: &inter_light
+      type: gfonts
+      family: Inter
+      weight: 300
+    id: font_huge
+    size: 96
+    bpp: 4
+    glyphs: "0123456789.-° "
+  - file: *inter_light
+    id: font_large
+    size: 48
+    bpp: 4
+    glyphs: "0123456789:.-° "
+  - file:
+      type: gfonts
+      family: Inter
+      weight: 500
+    id: font_value
+    size: 28
+    bpp: 4
+    glyphsets: [GF_Latin_Core]
+    glyphs: "µ³"
+  - file:
+      type: gfonts
+      family: Inter
+      weight: 400
+    id: font_body
+    size: 20
+    bpp: 4
+    glyphsets: [GF_Latin_Core]
+  - file: &mdi
+      type: web
+      url: https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/fonts/materialdesignicons-webfont.ttf
+    id: icon_huge
+    size: 96
+    bpp: 4
+    glyphs: &weather_glyphs
+      - "\U000F0599"  # weather-sunny
+      - "\U000F0594"  # weather-night
+      - "\U000F0595"  # weather-partly-cloudy
+      - "\U000F0590"  # weather-cloudy
+      - "\U000F0591"  # weather-fog
+      - "\U000F0592"  # weather-hail
+      - "\U000F0593"  # weather-lightning
+      - "\U000F067E"  # weather-lightning-rainy
+      - "\U000F0596"  # weather-pouring
+      - "\U000F0597"  # weather-rainy
+      - "\U000F0598"  # weather-snowy
+      - "\U000F067F"  # weather-snowy-rainy
+      - "\U000F059D"  # weather-windy
+      - "\U000F059E"  # weather-windy-variant
+      - "\U000F05D6"  # alert-circle-outline
+      - "\U000F02D6"  # help
+  - file: *mdi
+    id: icon_forecast
+    size: 40
+    bpp: 4
+    glyphs: *weather_glyphs
+  - file: *mdi
+    id: icon_inline
+    size: 28
+    bpp: 4
+    glyphs:
+      - "\U000F059D"  # weather-windy
+      - "\U000F059E"  # weather-windy-variant
+      - "\U000F058E"  # water-percent
+      - "\U000F029A"  # gauge
+      - "\U000F0596"  # weather-pouring
+      - "\U000F054A"  # umbrella
+      - "\U000F0599"  # weather-sunny
+      - "\U000F005D"  # arrow-up
+      - "\U000F0045"  # arrow-down
+      - "\U000F0054"  # arrow-right
+      - "\U000F07E4"  # molecule-co2
+      - "\U000F0D43"  # air-filter
+      - "\U000F0A72"  # solar-power
+      - "\U000F0241"  # flash
+      - "\U000F0374"  # minus
+      - "\U000F0415"  # plus
+      - "\U000F0238"  # fire
+      - "\U000F0717"  # snowflake
+      - "\U000F0425"  # power
+
+globals:
+  - id: is_night
+    type: bool
+    initial_value: "false"
+  - id: night_woken
+    type: bool
+    initial_value: "false"
+
+datetime:
+  - platform: template
+    id: night_start
+    name: Night Start
+    type: time
+    optimistic: true
+    restore_value: true
+    initial_value: "22:00:00"
+    entity_category: config
+    on_value:
+      - script.execute: backlight_apply
+  - platform: template
+    id: night_end
+    name: Night End
+    type: time
+    optimistic: true
+    restore_value: true
+    initial_value: "07:00:00"
+    entity_category: config
+    on_value:
+      - script.execute: backlight_apply
+
+touchscreen:
+  - id: !extend touch_panel
+    on_release:
+      - if:
+          condition:
+            lambda: "return id(is_night);"
+          then:
+            - script.execute: night_wake
+
+script:
+  - id: backlight_apply
+    then:
+      - lambda: |-
+          auto now = id(time_homeassistant).now();
+          id(is_night) = now.is_valid() && nord::in_window(
+              now.hour * 60 + now.minute,
+              id(night_start).hour * 60 + id(night_start).minute,
+              id(night_end).hour * 60 + id(night_end).minute);
+          if (!id(is_night)) id(night_woken) = false;
+      - if:
+          condition:
+            lambda: "return id(is_night) && !id(night_woken);"
+          then:
+            - lvgl.widget.hide: hourly_modal
+            - light.turn_off: display_backlight
+            - lvgl.pause:
+          else:
+            - if:
+                condition:
+                  lambda: "return !id(is_night);"
+                then:
+                  # Resuming resets LVGL's inactivity timer, which would keep on_idle from firing.
+                  - if:
+                      condition: lvgl.is_paused
+                      then:
+                        - lvgl.resume:
+                  - light.turn_on:
+                      id: display_backlight
+                      transition_length: 2s
+                      brightness: !lambda |-
+                        return nord::backlight_level(id(outdoor_lux).state, ${backlight_lux_min},
+                                                     ${backlight_lux_max}, ${backlight_level_min});
+
+  # Wake on release so the waking touch never reaches a button.
+  - id: night_wake
+    mode: restart
+    then:
+      - globals.set:
+          id: night_woken
+          value: "true"
+      - lvgl.resume:
+      - light.turn_on:
+          id: display_backlight
+          brightness: ${backlight_wake_level}
+      - delay: ${backlight_wake_duration}
+      - globals.set:
+          id: night_woken
+          value: "false"
+      - script.execute: backlight_apply
+
+  - id: update_wind
+    then:
+      - lvgl.label.update:
+          id: wind_label
+          text:
+            format: "%s km/h %s"
+            args:
+              - nord::fmt(id(out_wind).state, 0).c_str()
+              - nord::wind_dir(id(out_wind_dir).state)
+
+interval:
+  - interval: 5s
+    then:
+      - lvgl.label.update:
+          id: clock_label
+          text:
+            time_format: "%H:%M"
+            time: time_homeassistant
+      - lvgl.label.update:
+          id: date_label
+          text:
+            format: "%s"
+            args:
+              - >-
+                nord::french_date(id(time_homeassistant).now().day_of_week,
+                id(time_homeassistant).now().day_of_month, id(time_homeassistant).now().month).c_str()
+  - interval: 60s
+    then:
+      - script.execute: backlight_apply
+
+sensor:
+  - platform: homeassistant
+    id: outdoor_lux
+    entity_id: sensor.jardin_station_meteo_shelly_ecowitt_ws90_illuminance
+    internal: true
+
+  - platform: homeassistant
+    id: out_temp
+    entity_id: sensor.jardin_station_meteo_shelly_ecowitt_ws90_temperature
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: out_temp_label
+          text: {format: "%s°", args: ["nord::fmt(x, 1).c_str()"]}
+  - platform: homeassistant
+    id: out_feels
+    entity_id: sensor.jardin_station_meteo_shelly_ecowitt_ws90_apparent_temperature
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: out_feels_label
+          text: {format: "Ressenti %s°", args: ["nord::fmt(x, 1).c_str()"]}
+  - platform: homeassistant
+    id: out_wind
+    entity_id: sensor.jardin_station_meteo_shelly_ecowitt_ws90_wind_speed
+    internal: true
+    on_value:
+      - script.execute: update_wind
+  - platform: homeassistant
+    id: out_wind_dir
+    entity_id: sensor.jardin_station_meteo_shelly_ecowitt_ws90_wind_direction
+    internal: true
+    on_value:
+      - script.execute: update_wind
+  - platform: homeassistant
+    id: out_gust
+    entity_id: sensor.jardin_station_meteo_shelly_ecowitt_ws90_gust_speed
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: gust_label
+          text: {format: "Rafales %s km/h", args: ["nord::fmt(x, 0).c_str()"]}
+  - platform: homeassistant
+    id: out_humidity
+    entity_id: sensor.jardin_station_meteo_shelly_ecowitt_ws90_humidity
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: out_humidity_label
+          text: {format: "%s %%", args: ["nord::fmt(x, 0).c_str()"]}
+  - platform: homeassistant
+    id: out_pressure
+    entity_id: sensor.jardin_station_meteo_shelly_ecowitt_ws90_pressure
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: out_pressure_label
+          text: {format: "%s hPa", args: ["nord::fmt(x, 0).c_str()"]}
+  - platform: homeassistant
+    id: out_pressure_trend
+    entity_id: sensor.jardin_station_meteo_shelly_ecowitt_ws90_pressure_trend
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: out_trend_label
+          text: {format: "%s", args: ['std::isnan(x) ? "--" : str_sprintf("%+.1f hPa/h", x).c_str()']}
+      - lvgl.label.update:
+          id: out_trend_icon
+          text: {format: "%s", args: ['x > 0.3f ? "\U000F005D" : x < -0.3f ? "\U000F0045" : "\U000F0054"']}
+  - platform: homeassistant
+    id: out_rain_rate
+    entity_id: sensor.jardin_station_meteo_shelly_ecowitt_ws90_rain_rate
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: out_rain_rate_label
+          text: {format: "%s mm/h", args: ["nord::fmt(x, 1).c_str()"]}
+  - platform: homeassistant
+    id: out_rain_chance
+    entity_id: !secret meteo_france_rain_chance_entity
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: out_rain_chance_label
+          text: {format: "Pluie %s %%", args: ["nord::fmt(x, 0).c_str()"]}
+  - platform: homeassistant
+    id: out_uv
+    entity_id: sensor.jardin_station_meteo_shelly_ecowitt_ws90_uv_index
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: out_uv_label
+          text: {format: "UV %s", args: ["nord::fmt(x, 0).c_str()"]}
+
+  - platform: homeassistant
+    id: bureau_temp
+    entity_id: sensor.bureau_capteur_de_qualite_d_air_alpstuga_temperature
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: bureau_temp_label
+          text: {format: "%s°", args: ["nord::fmt(x, 1).c_str()"]}
+  - platform: homeassistant
+    id: bureau_humidity
+    entity_id: sensor.bureau_capteur_de_qualite_d_air_alpstuga_humidite
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: bureau_humidity_label
+          text: {format: "%s %%", args: ["nord::fmt(x, 0).c_str()"]}
+  - platform: homeassistant
+    id: bureau_co2
+    entity_id: sensor.bureau_capteur_de_qualite_d_air_alpstuga_dioxyde_de_carbone
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: bureau_co2_label
+          text: {format: "%s ppm", args: ["nord::fmt(x, 0).c_str()"]}
+          text_color: !lambda 'return lv_color_hex(nord::level_color(nord::threshold_level(x, 800, 1200)));'
+  - platform: homeassistant
+    id: bureau_pm25
+    entity_id: sensor.bureau_capteur_de_qualite_d_air_alpstuga_pm2_5
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: bureau_pm25_label
+          text: {format: "%s µg/m³", args: ["nord::fmt(x, 0).c_str()"]}
+          text_color: !lambda 'return lv_color_hex(nord::level_color(nord::threshold_level(x, 15, 35)));'
+  - platform: homeassistant
+    id: bureau_target
+    entity_id: input_number.climate_bureau_target
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: bureau_target_label
+          text: {format: "%s°", args: ["nord::fmt(x, 1).c_str()"]}
+
+  - platform: homeassistant
+    id: pv_power
+    entity_id: sensor.power_production_now
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: pv_power_label
+          text: {format: "%s W", args: ["nord::fmt(x, 0).c_str()"]}
+  - platform: homeassistant
+    id: grid_power
+    entity_id: sensor.jardin_teleinfo_puissance_apparente
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: grid_power_label
+          text: {format: "%s VA", args: ["nord::fmt(x, 0).c_str()"]}
+  - platform: homeassistant
+    id: pv_today
+    entity_id: sensor.energy_production_today
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: pv_today_label
+          text: {format: "Aujourd'hui %s kWh", args: ["nord::fmt(x, 2).c_str()"]}
+  - platform: homeassistant
+    id: pv_tomorrow
+    entity_id: sensor.energy_production_tomorrow
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: pv_tomorrow_label
+          text: {format: "Demain %s kWh", args: ["nord::fmt(x, 2).c_str()"]}
+
+text_sensor:
+  - platform: homeassistant
+    id: hourly_forecast
+    entity_id: sensor.meteo_prevision_horaire
+    attribute: heures
+    internal: true
+    on_value:
+      - lambda: |-
+          nord::hourly_update(id(hourly_grid), x, id(font_body)->get_lv_font(),
+                              id(font_value)->get_lv_font(), id(icon_forecast)->get_lv_font());
+  - platform: homeassistant
+    id: out_condition
+    entity_id: !secret meteo_france_weather_entity
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: out_icon
+          text: {format: "%s", args: ["nord::weather_glyph(x)"]}
+      - lvgl.label.update:
+          id: out_condition_label
+          text: {format: "%s", args: ["nord::weather_label(x)"]}
+  - platform: homeassistant
+    id: weather_alert
+    entity_id: !secret meteo_france_alert_entity
+    internal: true
+    on_value:
+      - if:
+          condition:
+            lambda: 'return x == "Jaune" || x == "Orange" || x == "Rouge";'
+          then:
+            - lvgl.widget.update:
+                id: vigilance_badge
+                bg_color: !lambda 'return lv_color_hex(x == "Jaune" ? 0xEBCB8B : x == "Orange" ? 0xD08770 : 0xBF616A);'
+            - lvgl.label.update:
+                id: vigilance_label
+                text: {format: "Vigilance %s", args: ["str_lower_case(x).c_str()"]}
+            - lvgl.widget.show: vigilance_badge
+          else:
+            - lvgl.widget.hide: vigilance_badge
+  - platform: homeassistant
+    id: tariff
+    entity_id: sensor.periode_tarifaire
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: tariff_label
+          text: {format: "%s", args: ['x == "HC" ? "Heures creuses" : "Heures pleines"']}
+          text_color: !lambda 'return lv_color_hex(x == "HC" ? 0xA3BE8C : 0xD8DEE9);'
+  - platform: homeassistant
+    id: bureau_air
+    entity_id: sensor.bureau_capteur_de_qualite_d_air_alpstuga_qualite_de_l_air
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: bureau_air_label
+          text: {format: "Qualité de l'air : %s", args: ["nord::air_label(x)"]}
+      - lvgl.widget.update:
+          id: bureau_air_dot
+          bg_color: !lambda "return lv_color_hex(nord::level_color(nord::air_level(x)));"
+  - platform: homeassistant
+    id: bureau_hvac
+    entity_id: climate.bureau_room_temperature
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: bureau_hvac_label
+          text: {format: "%s", args: ["nord::hvac_label(x)"]}
+      - lvgl.label.update:
+          id: bureau_hvac_icon
+          text: {format: "%s", args: ['x == "heat" ? "\U000F0238" : x == "cool" ? "\U000F0717" : "\U000F0425"']}
+          text_color: !lambda 'return lv_color_hex(x == "heat" ? 0xD08770 : x == "cool" ? 0x88C0D0 : 0xD8DEE9);'
+
+  - platform: homeassistant
+    id: fc1_day
+    entity_id: sensor.meteo_prevision_3_jours
+    attribute: j1_jour
+    internal: true
+    on_value:
+      - lvgl.label.update: {id: fc1_day_label, text: {format: "%s", args: ["x.c_str()"]}}
+  - platform: homeassistant
+    id: fc1_condition
+    entity_id: sensor.meteo_prevision_3_jours
+    attribute: j1_condition
+    internal: true
+    on_value:
+      - lvgl.label.update: {id: fc1_icon, text: {format: "%s", args: ["nord::weather_glyph(x)"]}}
+  - platform: homeassistant
+    id: fc1_temp
+    entity_id: sensor.meteo_prevision_3_jours
+    attribute: j1_temp
+    internal: true
+    on_value:
+      - lvgl.label.update: {id: fc1_temp_label, text: {format: "%s", args: ["x.c_str()"]}}
+  - platform: homeassistant
+    id: fc1_rain
+    entity_id: sensor.meteo_prevision_3_jours
+    attribute: j1_pluie
+    internal: true
+    on_value:
+      - lvgl.label.update: {id: fc1_rain_label, text: {format: "%s", args: ["x.c_str()"]}}
+  - platform: homeassistant
+    id: fc2_day
+    entity_id: sensor.meteo_prevision_3_jours
+    attribute: j2_jour
+    internal: true
+    on_value:
+      - lvgl.label.update: {id: fc2_day_label, text: {format: "%s", args: ["x.c_str()"]}}
+  - platform: homeassistant
+    id: fc2_condition
+    entity_id: sensor.meteo_prevision_3_jours
+    attribute: j2_condition
+    internal: true
+    on_value:
+      - lvgl.label.update: {id: fc2_icon, text: {format: "%s", args: ["nord::weather_glyph(x)"]}}
+  - platform: homeassistant
+    id: fc2_temp
+    entity_id: sensor.meteo_prevision_3_jours
+    attribute: j2_temp
+    internal: true
+    on_value:
+      - lvgl.label.update: {id: fc2_temp_label, text: {format: "%s", args: ["x.c_str()"]}}
+  - platform: homeassistant
+    id: fc2_rain
+    entity_id: sensor.meteo_prevision_3_jours
+    attribute: j2_pluie
+    internal: true
+    on_value:
+      - lvgl.label.update: {id: fc2_rain_label, text: {format: "%s", args: ["x.c_str()"]}}
+  - platform: homeassistant
+    id: fc3_day
+    entity_id: sensor.meteo_prevision_3_jours
+    attribute: j3_jour
+    internal: true
+    on_value:
+      - lvgl.label.update: {id: fc3_day_label, text: {format: "%s", args: ["x.c_str()"]}}
+  - platform: homeassistant
+    id: fc3_condition
+    entity_id: sensor.meteo_prevision_3_jours
+    attribute: j3_condition
+    internal: true
+    on_value:
+      - lvgl.label.update: {id: fc3_icon, text: {format: "%s", args: ["nord::weather_glyph(x)"]}}
+  - platform: homeassistant
+    id: fc3_temp
+    entity_id: sensor.meteo_prevision_3_jours
+    attribute: j3_temp
+    internal: true
+    on_value:
+      - lvgl.label.update: {id: fc3_temp_label, text: {format: "%s", args: ["x.c_str()"]}}
+  - platform: homeassistant
+    id: fc3_rain
+    entity_id: sensor.meteo_prevision_3_jours
+    attribute: j3_pluie
+    internal: true
+    on_value:
+      - lvgl.label.update: {id: fc3_rain_label, text: {format: "%s", args: ["x.c_str()"]}}
+
+lvgl:
+  displays: panel_display
+  touchscreens: touch_panel
+  byte_order: little_endian
+  default_font: font_body
+  on_idle:
+    timeout: 60s
+    then:
+      - lvgl.widget.hide: hourly_modal
+  theme:
+    label:
+      text_color: 0xECEFF4
+  style_definitions:
+    - id: card
+      bg_color: 0x3B4252
+      bg_opa: COVER
+      border_color: 0x4C566A
+      border_width: 1
+      radius: 16
+      pad_all: 20
+    - id: card_title
+      text_color: 0x88C0D0
+      text_letter_space: 2
+    - id: muted
+      text_color: 0xD8DEE9
+    - id: icon
+      text_font: icon_inline
+      text_color: 0x88C0D0
+    - id: value
+      text_font: font_value
+    - id: btn
+      bg_color: 0x434C5E
+      bg_opa: COVER
+      border_width: 0
+      radius: 12
+      shadow_width: 0
+  top_layer:
+    widgets:
+      # Hourly forecast modal: opened from the weather card, any tap closes it.
+      - obj:
+          id: hourly_modal
+          hidden: true
+          x: 0
+          y: 0
+          width: 100%
+          height: 100%
+          radius: 0
+          border_width: 0
+          bg_color: 0x2E3440
+          bg_opa: COVER
+          pad_all: 24
+          scrollable: false
+          on_click:
+            - lvgl.widget.hide: hourly_modal
+          widgets:
+            - label: {styles: card_title, x: 0, y: 0, text: "PROCHAINES HEURES"}
+            # 2 columns x 6 rows of 68px with 10px gaps; rows are built in nord::hourly_update.
+            - obj:
+                id: hourly_grid
+                x: 0
+                y: 44
+                width: 100%
+                height: 458
+                bg_opa: TRANSP
+                border_width: 0
+                radius: 0
+                pad_all: 0
+                clickable: false
+                scrollable: false
+  pages:
+    - id: main_page
+      bg_color: 0x2E3440
+      bg_opa: COVER
+      scrollable: false
+      widgets:
+        # Top bar
+        - label:
+            id: clock_label
+            x: 24
+            y: 2
+            text_font: font_large
+            text: "--:--"
+        - label:
+            id: date_label
+            styles: muted
+            x: 172
+            y: 20
+            text: ""
+        - obj:
+            align: TOP_RIGHT
+            width: 600
+            height: 64
+            bg_opa: TRANSP
+            border_width: 0
+            pad_right: 24
+            scrollable: false
+            layout:
+              type: flex
+              pad_column: 16
+              flex_flow: ROW
+              flex_align_main: END
+              flex_align_cross: CENTER
+              flex_align_track: CENTER
+            widgets:
+              # Badge text is 28px (large text): 2E3440 on nord12/nord11 stays >= 3:1.
+              - obj:
+                  id: vigilance_badge
+                  hidden: true
+                  width: SIZE_CONTENT
+                  height: SIZE_CONTENT
+                  radius: 20
+                  border_width: 0
+                  bg_color: 0xEBCB8B
+                  pad_left: 16
+                  pad_right: 16
+                  pad_top: 4
+                  pad_bottom: 4
+                  scrollable: false
+                  widgets:
+                    - label:
+                        id: vigilance_label
+                        styles: value
+                        text_color: 0x2E3440
+                        text: ""
+
+        # Weather card
+        - obj:
+            styles: card
+            x: 16
+            y: 72
+            width: 488
+            height: 512
+            scrollable: false
+            pressed:
+              bg_color: 0x434C5E
+            on_click:
+              - lvgl.widget.show: hourly_modal
+            widgets:
+              - label: {styles: card_title, x: 0, y: 0, text: "MÉTÉO JARDIN"}
+              - label:
+                  id: out_icon
+                  x: 0
+                  y: 36
+                  text_font: icon_huge
+                  text_color: 0x88C0D0
+                  text: "\U000F02D6"
+              - label:
+                  id: out_temp_label
+                  x: 116
+                  y: 20
+                  text_font: font_huge
+                  text: "--"
+              - label: {id: out_condition_label, x: 120, y: 132, text: ""}
+              - label: {id: out_feels_label, styles: muted, x: 120, y: 158, text: ""}
+
+              - label: {styles: icon, x: 0, y: 200, text: "\U000F059D"}
+              - label: {id: wind_label, x: 40, y: 204, text: "--"}
+              - label: {styles: icon, x: 232, y: 200, text: "\U000F059E"}
+              - label: {id: gust_label, x: 272, y: 204, text: "--"}
+              - label: {styles: icon, x: 0, y: 244, text: "\U000F058E"}
+              - label: {id: out_humidity_label, x: 40, y: 248, text: "--"}
+              - label: {styles: icon, x: 232, y: 244, text: "\U000F029A"}
+              - label: {id: out_pressure_label, x: 272, y: 248, text: "--"}
+              - label: {styles: icon, x: 0, y: 288, text: "\U000F0596"}
+              - label: {id: out_rain_rate_label, x: 40, y: 292, text: "--"}
+              - label: {styles: icon, x: 232, y: 288, text: "\U000F054A"}
+              - label: {id: out_rain_chance_label, x: 272, y: 292, text: "--"}
+              - label: {styles: icon, x: 0, y: 332, text: "\U000F0599"}
+              - label: {id: out_uv_label, x: 40, y: 336, text: "--"}
+              - label: {id: out_trend_icon, styles: icon, x: 232, y: 332, text: "\U000F0054"}
+              - label: {id: out_trend_label, x: 272, y: 336, text: "--"}
+
+              - obj:
+                  x: 0
+                  y: 378
+                  width: 448
+                  height: 1
+                  bg_color: 0x4C566A
+                  border_width: 0
+                  radius: 0
+                  pad_all: 0
+
+              - label: {id: fc1_icon, x: 0, y: 408, text_font: icon_forecast, text_color: 0x88C0D0, text: "\U000F02D6"}
+              - label: {id: fc1_day_label, styles: card_title, x: 50, y: 392, text: ""}
+              - label: {id: fc1_temp_label, x: 50, y: 416, text: ""}
+              - label: {id: fc1_rain_label, styles: muted, x: 50, y: 440, text: ""}
+              - label: {id: fc2_icon, x: 150, y: 408, text_font: icon_forecast, text_color: 0x88C0D0, text: "\U000F02D6"}
+              - label: {id: fc2_day_label, styles: card_title, x: 200, y: 392, text: ""}
+              - label: {id: fc2_temp_label, x: 200, y: 416, text: ""}
+              - label: {id: fc2_rain_label, styles: muted, x: 200, y: 440, text: ""}
+              - label: {id: fc3_icon, x: 300, y: 408, text_font: icon_forecast, text_color: 0x88C0D0, text: "\U000F02D6"}
+              - label: {id: fc3_day_label, styles: card_title, x: 350, y: 392, text: ""}
+              - label: {id: fc3_temp_label, x: 350, y: 416, text: ""}
+              - label: {id: fc3_rain_label, styles: muted, x: 350, y: 440, text: ""}
+
+        # Bureau card
+        - obj:
+            styles: card
+            x: 520
+            y: 72
+            width: 488
+            height: 300
+            scrollable: false
+            widgets:
+              - label: {styles: card_title, x: 0, y: 0, text: "BUREAU"}
+              - label:
+                  id: bureau_temp_label
+                  x: 0
+                  y: 28
+                  text_font: font_large
+                  text: "--"
+              - label: {styles: icon, x: 200, y: 44, text: "\U000F058E"}
+              - label: {id: bureau_humidity_label, styles: value, x: 240, y: 42, text: "--"}
+
+              - label: {styles: icon, x: 0, y: 110, text: "\U000F07E4"}
+              - label: {id: bureau_co2_label, styles: value, x: 40, y: 108, text: "--"}
+              - label: {styles: icon, x: 232, y: 110, text: "\U000F0D43"}
+              - label: {id: bureau_pm25_label, styles: value, x: 272, y: 108, text: "--"}
+
+              - obj:
+                  id: bureau_air_dot
+                  x: 6
+                  y: 160
+                  width: 16
+                  height: 16
+                  radius: 8
+                  border_width: 0
+                  bg_color: 0xD8DEE9
+              - label: {id: bureau_air_label, x: 40, y: 156, text: ""}
+
+              - label: {id: bureau_hvac_icon, styles: icon, x: 0, y: 214, text: "\U000F0425"}
+              - label: {id: bureau_hvac_label, x: 40, y: 218, text: ""}
+              - button:
+                  styles: btn
+                  x: 224
+                  y: 200
+                  width: 56
+                  height: 56
+                  pressed:
+                    bg_color: 0x4C566A
+                  widgets:
+                    - label: {align: CENTER, text_font: icon_inline, text: "\U000F0374"}
+                  on_click:
+                    - homeassistant.action:
+                        action: input_number.decrement
+                        data:
+                          entity_id: input_number.climate_bureau_target
+              - label:
+                  id: bureau_target_label
+                  styles: value
+                  x: 280
+                  y: 212
+                  width: 112
+                  text_align: CENTER
+                  text_color: 0x88C0D0
+                  text: "--"
+              - button:
+                  styles: btn
+                  x: 392
+                  y: 200
+                  width: 56
+                  height: 56
+                  pressed:
+                    bg_color: 0x4C566A
+                  widgets:
+                    - label: {align: CENTER, text_font: icon_inline, text: "\U000F0415"}
+                  on_click:
+                    - homeassistant.action:
+                        action: input_number.increment
+                        data:
+                          entity_id: input_number.climate_bureau_target
+
+        # Energy card
+        - obj:
+            styles: card
+            x: 520
+            y: 388
+            width: 488
+            height: 196
+            scrollable: false
+            widgets:
+              - label: {styles: card_title, x: 0, y: 0, text: "ÉNERGIE"}
+              - label: {id: tariff_label, align: TOP_RIGHT, text: ""}
+              - label: {styles: icon, x: 0, y: 40, text_color: 0xEBCB8B, text: "\U000F0A72"}
+              - label: {id: pv_power_label, styles: value, x: 40, y: 38, text: "--"}
+              - label: {styles: muted, x: 40, y: 72, text: "Production"}
+              - label: {styles: icon, x: 232, y: 40, text: "\U000F0241"}
+              - label: {id: grid_power_label, styles: value, x: 272, y: 38, text: "--"}
+              - label: {styles: muted, x: 272, y: 72, text: "Consommation"}
+              - label: {id: pv_today_label, styles: muted, x: 0, y: 116, text: ""}
+              - label: {id: pv_tomorrow_label, styles: muted, x: 232, y: 116, text: ""}

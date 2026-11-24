@@ -2,10 +2,12 @@
 substitutions:
   name: "streamdeck"
   friendly_name: "Streamdeck"
-
-  device: "guition-esp32-p4-jc1060p470"
+  slug: "streamdeck"
 
   api_encryption_key: !secret esphome_streamdeck_api_encryption_key
+  logger_level: DEBUG
+  web_server_local: "false"
 
 packages:
-  device: !include devices/espcontrol.yaml
+  device: !include devices/guition_jc1060p470.yaml
+  dashboard: !include components/nord_dashboard.yaml

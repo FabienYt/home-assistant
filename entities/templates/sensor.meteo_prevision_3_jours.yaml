@@ -1,0 +1,54 @@
+---
+# Flattens the daily forecast for the Bureau screen: ESPHome can only read scalar attributes.
+triggers:
+  - trigger: homeassistant
+    event: start
+  - trigger: event
+    event_type: event_template_reloaded
+  - trigger: time_pattern
+    minutes: /30
+
+actions:
+  - variables:
+      weather: !secret meteo_france_weather_entity
+  - action: weather.get_forecasts
+    target:
+      entity_id: "{{ weather }}"
+    data:
+      type: daily
+    response_variable: response
+  - variables:
+      days: >-
+        {% set ns = namespace(days=[]) %}
+        {% set noms = ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'] %}
+        {% for f in response[weather].forecast[1:4] %}
+          {% set ns.days = ns.days + [{
+            'jour': noms[as_local(as_datetime(f.datetime)).weekday()],
+            'condition': f.condition,
+            'temp': (f.temperature | round(0) | int) ~ '° / ' ~ (f.templow | round(0) | int) ~ '°',
+            'pluie': (f.precipitation | round(0) | int) ~ ' mm'}] %}
+        {% endfor %}
+        {{ ns.days }}
+
+sensor:
+  - default_entity_id: sensor.meteo_prevision_3_jours
+    name: Météo prévision 3 jours
+    unique_id: 'c0d5ac2c-5df2-4214-bd71-8659b0779c03'
+
+    icon: mdi:weather-partly-cloudy
+
+    state: '{{ days[0].condition }}'
+
+    attributes:
+      j1_jour: '{{ days[0].jour }}'
+      j1_condition: '{{ days[0].condition }}'
+      j1_temp: '{{ days[0].temp }}'
+      j1_pluie: '{{ days[0].pluie }}'
+      j2_jour: '{{ days[1].jour }}'
+      j2_condition: '{{ days[1].condition }}'
+      j2_temp: '{{ days[1].temp }}'
+      j2_pluie: '{{ days[1].pluie }}'
+      j3_jour: '{{ days[2].jour }}'
+      j3_condition: '{{ days[2].condition }}'
+      j3_temp: '{{ days[2].temp }}'
+      j3_pluie: '{{ days[2].pluie }}'

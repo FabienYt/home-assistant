@@ -1,0 +1,61 @@
+---
+# Guition ESP32-P4 JC1060P470: 7" 1024x600 MIPI DSI, GT911 touch, IP101 Ethernet.
+# Ethernet only: the ESP32-C6 WiFi co-processor is left unused.
+packages:
+  <<: !include_dir_named ../common
+
+  board: !include ../boards/guition_jc1060p470.yaml
+
+esp_ldo:
+  - channel: 3
+    voltage: 2.5V
+
+ethernet:
+  type: IP101
+  mdc_pin: GPIO31
+  mdio_pin: GPIO52
+  power_pin: GPIO51
+  clk:
+    mode: CLK_EXT_IN
+    pin: GPIO50
+  phy_addr: 1
+
+i2c:
+  - id: bus_a
+    sda: GPIO07
+    scl: GPIO08
+    frequency: 400kHz
+    sda_pullup_enabled: false
+    scl_pullup_enabled: false
+
+touchscreen:
+  - platform: gt911
+    id: touch_panel
+    display: panel_display
+    i2c_id: bus_a
+    reset_pin: GPIO22
+    interrupt_pin: GPIO21
+
+display:
+  - platform: mipi_dsi
+    id: panel_display
+    model: JC1060P470
+    color_order: RGB
+    reset_pin: GPIO05
+    update_interval: never
+    auto_clear_enabled: false
+
+output:
+  - platform: ledc
+    id: backlight_pwm
+    pin: GPIO23
+    frequency: 20000Hz
+
+light:
+  - platform: monochromatic
+    id: display_backlight
+    name: Display Backlight
+    output: backlight_pwm
+    restore_mode: ALWAYS_ON
+    default_transition_length: 0s
+    gamma_correct: 1.0
