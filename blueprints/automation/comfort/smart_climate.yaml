@@ -9,7 +9,8 @@ blueprint:
     heat mode and skips regulation when the room sensor has not reported for
     30 minutes. Halves the setpoint windup when the room overshoots by 1 °C.
     Optionally raises the target during off-peak hours to store heat in the
-    walls, and lowers it while nobody is home.
+    walls, and lowers it while nobody is home. Skips the night quiet fan
+    when the forecast night low is below 10 °C.
   domain: automation
   input:
     climate_entity:
@@ -173,6 +174,11 @@ actions:
       hourly: >-
         {{ forecast[weather_entity].forecast
            if forecast is defined and weather_entity in forecast else [] }}
+      quiet: "{{ is_state_attr(climate_entity, 'fan_mode', 'quiet') }}"
+      go_quiet: >-
+        {{ night_quiet and trigger.id == 'quiet_start' and not quiet
+           and (hourly[:12] | map(attribute='temperature') | min
+                if hourly else 99) >= 10 }}
       outlook: >-
         {{ hourly[3].temperature - hourly[0].temperature
            if hourly | count > 3 else 0 }}
@@ -186,6 +192,8 @@ actions:
           {% set t = current + trigger.to_state.state | float(0)
                      - trigger.from_state.state
                        | float(trigger.to_state.state | float(0)) %}
+        {% elif trigger.id in ['quiet_start', 'quiet_end'] %}
+          {% set t = current %}
         {% elif error >= 1 %}
           {% set t = base + 2 * step %}
         {% elif error <= -1 %}
@@ -195,8 +203,8 @@ actions:
         {% else %}
           {% set t = current %}
         {% endif %}
-        {{ ([low, (t / step) | round * step, high] | sort)[1] }}
-      quiet: "{{ is_state_attr(climate_entity, 'fan_mode', 'quiet') }}"
+        {% set top = [high, target + 1] | min if go_quiet else high %}
+        {{ ([low, (t / step) | round * step, top] | sort)[1] }}
       night: >-
         {% set t = now().strftime('%H:%M:%S') %}
         {{ (t >= quiet_start or t < quiet_end) if quiet_start > quiet_end
@@ -221,8 +229,7 @@ actions:
   - choose:
       - conditions:
           - condition: template
-            value_template: >-
-              {{ night_quiet and trigger.id == 'quiet_start' and not quiet }}
+            value_template: "{{ go_quiet }}"
         sequence:
           - action: climate.set_fan_mode
             target:
